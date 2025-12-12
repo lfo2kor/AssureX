@@ -1,0 +1,39 @@
+{
+  "step": "Click Edit button in Runs module",
+  "selector": "[data-editbtn='EditBtn']",
+  "confidence": 0.95,
+  "category": "corrections",
+  "context": {
+    "module": "Runs",
+    "action_type": "edit",
+    "sequential_context": {
+      "current_module": "Runs",
+      "previous_step": "Navigate to Runs",
+      "current_url": "http://fe0vm03313.de.bosch.com/rbplcd_t/client/runs"
+    }
+  },
+  "failure_analysis": {
+    "l1_attempts": [
+      {
+        "selector": "[data-button='Edit']",
+        "confidence": 0.65,
+        "result": "failed"
+      }
+    ],
+    "l2_attempts": [],
+    "l3_attempts": [],
+    "total_attempts": 1,
+    "error_message": "Element not found"
+  },
+  "metadata": {
+    "ticket_id": "RBPLCD-8003",
+    "step_number": 5,
+    "timestamp": "2025-12-04T14:00:00"
+  },
+  "storage_metadata": {
+    "saved_at": "2025-12-04T14:00:00",
+    "file_path": "insights/pending/RBPLCD-8003_step5_test.json",
+    "storage_type": "pending",
+    "embedded": false
+  }
+}

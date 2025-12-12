@@ -1,0 +1,14 @@
+[RBPLCD-8003] Edit multiple attributes in teststep
+ 
+  Module: Teststep
+ 
+  Steps:
+  1. Login
+  2. Click Runs link in sidebar to navigate to Teststep module
+  3. Click on table row for Teststep named default_Measurement01
+  4. Click to expand Parts accordion section
+  5. Click edit button for default_UUT_01
+  6. Click on attribut1 field
+  7. Enter text def 01-03
+  8. Click Save button
+  9. Verify success message Successfully edited: 'UUT' default_UUT_01

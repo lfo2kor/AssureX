@@ -1,0 +1,17 @@
+[RBPLCD-8006] Verify validation error when saving teststep without required Name field
+
+Module: Teststep
+
+Steps:
+1. Login
+2. Click Runs link in sidebar to navigate to Teststep module
+3. Click on table row for Teststep named default_Measurement01
+4. Click to expand Parts accordion section
+5. Click edit button for test object default_testobject_01
+6. Click on Name field
+7. Clear the Name field (delete all text)
+8. Click Save button
+9. Verify error message 'Name is required' or validation error is displayed
+10. Verify Save operation failed (dialog remains open)
+
+Expected Result: Validation error should be displayed when trying to save without required Name field. 

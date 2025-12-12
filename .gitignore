@@ -1,0 +1,22 @@
+# Temporary files
+nul
+
+# PDF files
+*.pdf
+
+# Environment variables (contains API keys!)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+.history/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add .)",
+      "Bash(git commit -m \"Initial commit - Restored from backup with today''s fixes\n\n- Added ChromaDB cleanup method to prevent database locks\n- Applied logging cleanup for cleaner terminal output\n- Restored all essential files from backup\n- System tested and working\n\nCritical files:\n- plcd_taseq.py (main orchestrator with cleanup fix)\n- config_loader.py\n- insight_storage.py\n- report_generator.py\n- agents/ (all agent implementations)\n- data/chromadb_llm (vector database)\n- insights/ (feedback learning data)\n\")",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)"
+    ]
+  }
+}

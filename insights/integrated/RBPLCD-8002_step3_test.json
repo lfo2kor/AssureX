@@ -1,0 +1,39 @@
+{
+  "step": "Click Save button to save changes",
+  "selector": "[data-savebtn='SaveBtn']",
+  "confidence": 0.92,
+  "category": "corrections",
+  "context": {
+    "module": "Runs",
+    "action_type": "save",
+    "sequential_context": {
+      "current_module": "Runs",
+      "previous_step": "Fill in details",
+      "current_url": "http://fe0vm03313.de.bosch.com/rbplcd_t/client/runs/edit"
+    }
+  },
+  "failure_analysis": {
+    "l1_attempts": [
+      {
+        "selector": "[data-button='Save']",
+        "confidence": 0.70,
+        "result": "failed"
+      }
+    ],
+    "l2_attempts": [],
+    "l3_attempts": [],
+    "total_attempts": 1,
+    "error_message": "Element not clickable"
+  },
+  "metadata": {
+    "ticket_id": "RBPLCD-8002",
+    "step_number": 3,
+    "timestamp": "2025-12-04T13:30:00"
+  },
+  "storage_metadata": {
+    "saved_at": "2025-12-04T13:30:00",
+    "file_path": "insights/pending/RBPLCD-8002_step3_test.json",
+    "storage_type": "pending",
+    "embedded": false
+  }
+}

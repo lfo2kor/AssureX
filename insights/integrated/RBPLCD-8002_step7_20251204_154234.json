@@ -1,0 +1,27 @@
+{
+  "step": "Click to expand Sequences accordion section",
+  "selector": "[data-expensionpanelheader=\"aeName.TestSequence.names\"]",
+  "confidence": 0.95,
+  "category": "corrections",
+  "context": {
+    "module": "Teststep",
+    "action_type": "click",
+    "sequential_context": {
+      "previous_steps": [],
+      "last_successful_action": null,
+      "last_selector_used": null,
+      "page_state_before_failure": "After step 6",
+      "current_module": "Teststep"
+    }
+  },
+  "metadata": {
+    "ticket_id": "RBPLCD-8002",
+    "step_number": 7,
+    "timestamp": "2025-12-04T15:42:34.645442",
+    "feedback_type": "failed",
+    "issue_description": "selector not found",
+    "browser": "edge",
+    "tester_id": "manual_feedback",
+    "source": "tester_feedback"
+  }
+}
