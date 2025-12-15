@@ -400,6 +400,43 @@ class InsightStorage:
             logger.error(f"Failed to calculate cosine similarity: {e}")
             return 0.0
 
+    def _detect_dynamic_selector(self, step_text: str, selector: str) -> tuple:
+        """
+        Detect if a selector is dynamic and extract the template value.
+
+        Patterns detected:
+        - "Choose Type 3" with [data-autocompleteitem="Type 3"] → dynamic, value="Type 3"
+        - "Edit default_object_02" with [data-editBtn='default_object_02'] → dynamic, value="default_object_02"
+
+        Args:
+            step_text: The step description
+            selector: The CSS selector
+
+        Returns:
+            Tuple of (is_dynamic: bool, template_value: str or None)
+        """
+        import re
+
+        # Pattern 1: Extract values like "Type 3", "Type 1", "Measurement10", etc.
+        # Matches: Capitalized word + space + number OR word + number
+        dynamic_patterns = [
+            r'\b([A-Z][a-z]+\s+\d+)\b',  # "Type 3", "User 5"
+            r'\b([a-z_]+[a-z0-9_]*\d+[a-z0-9_]*)\b',  # "default_testobject_02", "item_123"
+            r'\b([A-Z][a-z]+\d+)\b',  # "Measurement10", "Test5"
+        ]
+
+        for pattern in dynamic_patterns:
+            # Find value in step text
+            step_match = re.search(pattern, step_text)
+            if step_match:
+                value = step_match.group(1)
+                # Check if this value appears in the selector
+                if value in selector:
+                    logger.debug(f"Dynamic selector detected: value='{value}' in selector='{selector}'")
+                    return (True, value)
+
+        return (False, None)
+
     def save_pending_insight(
         self,
         insight: Dict[str, Any],
@@ -455,10 +492,28 @@ class InsightStorage:
             else:
                 action_type = 'interact'
 
+        # Detect if this is a dynamic selector
+        step_text = insight.get('step_text', '')
+        selector = insight.get('correct_selector', '')
+        is_dynamic, template_value = self._detect_dynamic_selector(step_text, selector)
+
+        # Build metadata dictionary
+        metadata = {
+            'ticket_id': ticket_id,
+            'step_number': step_number,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        # Add dynamic selector fields if detected
+        if is_dynamic and template_value:
+            metadata['isDynamic'] = True
+            metadata['value'] = template_value
+            logger.info(f"Dynamic selector auto-detected: value='{template_value}'")
+
         # Build complete pending insight with all required fields for batch embedding
         pending_insight = {
-            'step': insight.get('step_text', ''),  # Required for embedding
-            'selector': insight.get('correct_selector', ''),  # Required for embedding
+            'step': step_text,  # Required for embedding
+            'selector': selector,  # Required for embedding
             'confidence': insight.get('confidence', 0.95),  # Default high confidence for tester feedback
             'category': insight.get('feedback_type', 'corrections'),  # corrections, verified, etc.
 
@@ -476,11 +531,7 @@ class InsightStorage:
                 'error_message': insight.get('error_message', '')
             },
 
-            'metadata': {  # Required for embedding
-                'ticket_id': ticket_id,
-                'step_number': step_number,
-                'timestamp': datetime.now().isoformat()
-            },
+            'metadata': metadata,  # Now includes isDynamic and value if detected
 
             'storage_metadata': {
                 'saved_at': datetime.now().isoformat(),

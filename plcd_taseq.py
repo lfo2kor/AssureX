@@ -841,8 +841,33 @@ class SelectorAgentL1(BaseAgent):
                 logger.info(f"  Confidence: {best_match['confidence']:.2f} (similarity: {best_match['similarity']:.2f})")
                 logger.info(f"  File: {best_match.get('file', 'N/A')}")
 
+                # Apply dynamic selector substitution if needed
+                selector = best_match['selector']
+                metadata = best_match.get('metadata', {})
+
+                if metadata.get('isDynamic', False):
+                    # This is a dynamic selector - substitute template with actual value
+                    template_value = metadata.get('value', '')  # e.g., "Type 3"
+
+                    # Extract dynamic value from current step text
+                    query_value = self._extract_dynamic_value(step_text)
+
+                    if query_value and template_value:
+                        # Value-based substitution: Type 3 → Type 1
+                        if query_value != template_value and template_value in selector:
+                            new_selector = selector.replace(template_value, query_value)
+
+                            logger.info(f"🔄 Dynamic value substitution:")
+                            logger.info(f"   Stored: '{template_value}' → Query: '{query_value}'")
+                            logger.info(f"   Old selector: {selector}")
+                            logger.info(f"   New selector: {new_selector}")
+
+                            selector = new_selector
+                        else:
+                            logger.debug(f"Dynamic selector values match or template not in selector, no substitution needed")
+
                 return {
-                    'selector': best_match['selector'],
+                    'selector': selector,
                     'confidence': best_match['confidence'],
                     'agent': 'Pending Insight (Embeddings)',
                     'reasoning': f"Found via embedding similarity: {best_match['similarity']:.2f}"
@@ -1429,6 +1454,25 @@ class PLCDTestingAssistantSeq:
                 page.close()
                 browser.close()
 
+                # Rename video file to match report/script naming convention
+                if state.get('video_path'):
+                    try:
+                        import shutil
+                        old_video_path = Path(state['video_path'])
+                        if old_video_path.exists():
+                            # Generate new filename with same pattern as report/script
+                            video_folder = Path(self.config['folders']['videos'])
+                            video_folder.mkdir(parents=True, exist_ok=True)
+                            new_video_filename = f"{state['ticket_id']}_{state['timestamp']}.webm"
+                            new_video_path = video_folder / new_video_filename
+
+                            # Move/rename video file
+                            shutil.move(str(old_video_path), str(new_video_path))
+                            state['video_path'] = str(new_video_path)
+                            logger.debug(f"Video renamed: {new_video_filename}")
+                    except Exception as e:
+                        logger.warning(f"Video rename failed: {e}")
+
             # Step 6: Generate artifacts
             results = self._generate_artifacts(state)
 
@@ -1476,6 +1520,11 @@ class PLCDTestingAssistantSeq:
 
     def _initialize_state(self, ticket_id: str) -> TestExecutionState:
         """Initialize execution state"""
+        from datetime import datetime
+
+        # Generate single timestamp for all artifacts (report, script, video)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
         state: TestExecutionState = {
             'ticket_id': ticket_id,
             'ticket_title': '',
@@ -1497,6 +1546,7 @@ class PLCDTestingAssistantSeq:
             'script_path': None,
             'report_path': None,
             'execution_start_time': time.time(),
+            'timestamp': timestamp,  # Single timestamp for all artifacts
             'config': self.config
         }
         return state
@@ -2026,7 +2076,8 @@ class PLCDTestingAssistantSeq:
                 step_results=state['step_results'],
                 overall_status=state['overall_status'],
                 execution_time=execution_time,
-                config=self.config
+                config=self.config,
+                timestamp=state['timestamp']  # Pass shared timestamp
             )
 
             summary['report_path'] = report_path
@@ -2042,7 +2093,8 @@ class PLCDTestingAssistantSeq:
                     ticket_id=state['ticket_id'],
                     ticket_data=ticket_data,
                     step_results=state['step_results'],
-                    config=self.config
+                    config=self.config,
+                    timestamp=state['timestamp']  # Pass shared timestamp
                 )
                 summary['script_path'] = script_path
                 logger.debug(f"Playwright Script: {script_path}")
@@ -2750,7 +2802,8 @@ def search_pending_insights_embeddings(azure_client, config: Dict[str, Any],
                 'module': insight.get('context', {}).get('module', ''),
                 'file': candidate['file'],
                 'folder': candidate['folder'],
-                'timestamp': candidate['timestamp']
+                'timestamp': candidate['timestamp'],
+                'metadata': insight.get('metadata', {})  # Include metadata for dynamic substitution
             })
 
         logger.debug(f"Returning {len(matches)} best matches (similarity >= {similarity_threshold})")
