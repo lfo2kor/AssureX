@@ -1,0 +1,194 @@
+.register-container {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  h1 {
+    font-size: 28px;
+    margin-bottom: 32px;
+    color: #333;
+  }
+}
+
+.register-card {
+  background: white;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section {
+  margin-bottom: 40px;
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #555;
+    border-bottom: 2px solid #005587;
+    padding-bottom: 8px;
+  }
+
+  h3 {
+    font-size: 16px;
+    margin: 20px 0 12px;
+    color: #666;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.add-tester-section {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  .tester-select {
+    flex: 1;
+  }
+
+  button {
+    margin-top: 8px;
+  }
+}
+
+.assigned-testers {
+  margin-top: 24px;
+}
+
+.tester-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tester-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border-left: 4px solid #005587;
+
+  .tester-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon {
+      color: #005587;
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+
+      strong {
+        font-size: 14px;
+        color: #333;
+      }
+
+      span {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+  }
+}
+
+.upload-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.upload-item {
+  .upload-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+  }
+}
+
+.uploaded-files {
+  margin-top: 24px;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #e3f2fd;
+  border-radius: 8px;
+
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    mat-icon {
+      color: #005587;
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+
+      strong {
+        font-size: 14px;
+        color: #333;
+      }
+
+      span {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+
+  .save-btn {
+    padding: 0 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: 16px;
+  }
+
+  .register-card {
+    padding: 20px;
+  }
+
+  .add-tester-section {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .upload-section {
+    grid-template-columns: 1fr;
+  }
+}

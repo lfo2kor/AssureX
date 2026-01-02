@@ -1,0 +1,12 @@
+[RBPLCD-8002] View teststep details and navigate accordions
+ 
+  Module: Teststep
+ 
+  Steps:
+  1. Login
+  2. Click Runs link in sidebar to navigate to Teststep module
+  3. Click on table row for Teststep named default_Measurement01
+  4. Click to expand Details accordion section
+  5. Click to expand Parts accordion section
+  6. Click to expand Equipments accordion section
+  7. Click to expand Sequences accordion section

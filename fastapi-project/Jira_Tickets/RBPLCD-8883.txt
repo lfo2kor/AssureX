@@ -1,0 +1,38 @@
+[RBPLCD-8883] copy button should be disabled if already a copy of part is present. Created: 2025-10-12  Updated: 2025-10-12 
+Status:	Open
+Project:	RB-PLCD
+Component/s:	Parts
+Affects Version/s:	None 
+Fix Version/s:	None 
+
+Type: 	Bug/Problem 	Priority: 	Medium 
+Reporter: 	Bathla Raashi (BD/TOA-ETS1) 
+Assignee: 	Unassigned 
+Resolution: 	Unresolved 	Votes: 	0 
+Labels: 	None 
+Remaining Estimate:	Not Specified 
+Time Spent:	Not Specified 
+Original Estimate:	Not Specified 
+Environment: 	http://fe0vm03313.de.bosch.com/rbplcd_t/client/login
+
+
+
+
+ Description  	 
+Problem Description:
+Copy button is not wokring in Tests
+Steps to Reproduce:
+1. Login
+2. navigate to Parts from the left sidenavbar
+3. click on Part named as default_testobject_01
+4. click on copy button
+5. click on default_testobject_01_copy_1
+6. click on delete button 
+7. click on remove
+ 
+ Acceptance Criteria: 
+ copy button should not create a copy of default_testobject_01 if default_testobject_01_copy_1
+ is already present.
+ "An unexpected error occurred while saving. The provided value (default_testobject_01_copy_1) must be unique. (Name): 'TestObject' default_testobject_01" should be displayed
+
+Generated at Sun Oct 12 20:17:51 CEST 2025 by Bathla Raashi (BD/TOA-ETS1) using Jira 9.12.25#9120025-sha1:62b4d85e419ed49eeb00f21ebe7ccc8e230003f0. 

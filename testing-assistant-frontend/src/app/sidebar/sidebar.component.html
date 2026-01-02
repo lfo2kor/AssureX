@@ -1,0 +1,130 @@
+<mat-sidenav-container class="sidenav-container">
+  
+  <!-- Sidebar -->
+  <mat-sidenav 
+    #sidenav
+    [mode]="sideNavMode()"
+    [opened]="isOpen()"
+    [fixedInViewport]="isInMobileMode()"
+    class="sidebar"
+    [class.collapsed]="!isOpen()">
+    
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <div class="app-title" *ngIf="isOpen()">
+        <h2>{{ applicationTitle }}</h2>
+      </div>
+      <button 
+        mat-icon-button 
+        class="toggle-btn"
+        (click)="toggleSideNavigationBar()"
+        [matTooltip]="isOpen() ? 'Close sidebar' : 'Open sidebar'">
+        <mat-icon>{{ isOpen() ? 'close' : 'menu' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- User Section (username only) -->
+    <div class="user-section">
+      <div class="user-info">
+        <mat-icon class="user-avatar">account_circle</mat-icon>
+        <div class="user-details" *ngIf="isOpen()">
+          <span class="user-name">{{username}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <mat-nav-list>
+        <ng-container *ngFor="let item of sidebarLinks">
+          
+          <!-- Nav Item without children -->
+          <mat-list-item 
+            *ngIf="!item.items || item.items.length === 0"
+            class="nav-item"
+            [class.active]="item.active"
+            (click)="navigateToLink(item)"
+            [matTooltip]="!isOpen() ? item.title : ''"
+            matTooltipPosition="right">
+            
+            <mat-icon 
+              matListItemIcon
+              [svgIcon]="item.svgIcon ?? ''"
+              [fontSet]="item.iconFont ?? ''"
+              [matBadge]="(item.iconBadgeText | async) || ''"
+              [matBadgeHidden]="!(item.iconBadgeText | async)">
+              {{ item.icon || 'circle' }}
+            </mat-icon>
+            
+            <span matListItemTitle *ngIf="isOpen()">{{ item.title }}</span>
+          </mat-list-item>
+
+          <!-- Nav Item with children -->
+          <div *ngIf="item.items && item.items.length > 0" class="nav-group">
+            <mat-list-item 
+              class="nav-item nav-parent"
+              [class.active]="item.active"
+              [class.expanded]="item.expanded"
+              (click)="toggleExpanded(item)"
+              [matTooltip]="!isOpen() ? item.title : ''"
+              matTooltipPosition="right">
+              
+              <mat-icon matListItemIcon>{{ item.icon || 'folder' }}</mat-icon>
+              <span matListItemTitle *ngIf="isOpen()">{{ item.title }}</span>
+              <mat-icon class="expand-icon" *ngIf="isOpen()">
+                {{ item.expanded ? 'expand_less' : 'expand_more' }}
+              </mat-icon>
+            </mat-list-item>
+
+            <!-- Nested items -->
+            <div class="nav-children" *ngIf="item.expanded && isOpen()">
+              <mat-list-item
+                *ngFor="let child of item.items"
+                class="nav-item nav-child"
+                [class.active]="child.active"
+                (click)="navigateToLink(child)">
+                <mat-icon matListItemIcon>{{ child.icon || 'circle' }}</mat-icon>
+                <span matListItemTitle>{{ child.title }}</span>
+              </mat-list-item>
+            </div>
+          </div>
+
+        </ng-container>
+      </mat-nav-list>
+    </nav>
+
+    <!-- Sidebar Footer with Logout -->
+    <div class="sidebar-footer">
+      <div class="logout-section">
+        <button 
+          mat-list-item
+          class="logout-btn"
+          (click)="logout()"
+          [matTooltip]="!isOpen() ? 'Logout' : ''"
+          matTooltipPosition="right">
+          <mat-icon matListItemIcon>logout</mat-icon>
+          <span matListItemTitle *ngIf="isOpen()">Logout</span>
+        </button>
+      </div>
+      <ng-content select="[sidebar-footer]"></ng-content>
+    </div>
+
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="main-content">
+    <!-- Hamburger Button (shows when sidebar is closed) -->
+    <button 
+      mat-mini-fab
+      *ngIf="!isOpen()"
+      class="hamburger-btn"
+      (click)="openSidebar()"
+      matTooltip="Open menu"
+      matTooltipPosition="right">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <ng-content></ng-content>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

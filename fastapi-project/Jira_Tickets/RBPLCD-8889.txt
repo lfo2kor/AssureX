@@ -1,0 +1,34 @@
+[RBPLCD-8889] History button is not working Created: 2025-10-15  Updated: 2025-10-15 
+Status:	Open
+Project:	RB-PLCD
+Component/s:	AI-Assistant 
+Affects Version/s:	None 
+Fix Version/s:	None 
+
+Type: 	Bug/Problem 	Priority: 	Medium 
+Reporter: 	Srivastava Vanshika (BD/TOA-ETS1) 
+Assignee: 	Unassigned 
+Resolution: 	Unresolved 	Votes: 	0 
+Labels: 	None 
+Remaining Estimate:	Not Specified 
+Time Spent:	Not Specified 
+Original Estimate:	Not Specified 
+Environment: 	UI-T
+
+
+
+
+ Description  	 
+Problem Description:
+History button is not working
+Steps to Reproduce:
+1. login
+2. navigate to AI-Assistant
+3. click on History button
+4. right side history bar should be displayed
+
+Acceptance criteria:
+right side history bar should be displayed
+ 
+
+Generated at Wed Oct 15 15:08:02 CEST 2025 by Srivastava Vanshika (BD/TOA-ETS1) using Jira 9.12.25#9120025-sha1:62b4d85e419ed49eeb00f21ebe7ccc8e230003f0. 

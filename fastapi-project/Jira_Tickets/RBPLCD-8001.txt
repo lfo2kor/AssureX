@@ -1,0 +1,14 @@
+[RBPLCD-8001] Edit teststep measurement and change Type attribute
+ 
+  Module: Teststep
+ 
+  Steps:
+  1. Login 
+  2. Click Runs link in sidebar to navigate to Teststep module
+  3. Click on table row for Teststep named default_Measurement01
+  4. Click to expand Parts accordion section
+  5. Click edit button for test object default_testobject_01
+  6. Click on Type dropdown field
+  7. Choose Type 3 in dropdown menu
+  8. Click Save button
+  9. Verify success message Successfully edited: 'TestObject' default_testobject_01 is displayed
