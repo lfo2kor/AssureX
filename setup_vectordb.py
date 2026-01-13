@@ -8,6 +8,7 @@ import time
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
+from datetime import datetime
 import chromadb
 from chromadb.config import Settings
 
@@ -482,15 +483,398 @@ def setup_chromadb(config: Dict[str, Any]):
     return collection
 
 
+def create_learned_insights_collection(config: Dict[str, Any], chroma_client) -> Any:
+    """
+    Create or recreate the learned_insights_collection for storing tester feedback insights
+
+    Args:
+        config: Configuration dictionary
+        chroma_client: ChromaDB client instance
+
+    Returns:
+        ChromaDB collection object
+    """
+    collection_name = config['vector_database']['collections']['learned_insights']
+    distance_metric = config['vector_database']['distance_metric']
+
+    # Check if collection exists and delete it
+    try:
+        existing_collection = chroma_client.get_collection(name=collection_name)
+        existing_count = existing_collection.count()
+        print(f"\n[INFO] Collection '{collection_name}' already contains {existing_count} insights")
+        print(f"[INFO] Deleting existing collection and recreating...")
+        chroma_client.delete_collection(name=collection_name)
+        print(f"[OK] Existing collection deleted")
+    except Exception as e:
+        # Collection doesn't exist yet, which is fine
+        if "does not exist" not in str(e).lower():
+            logger.warning(f"Note: {e}")
+
+    # Create fresh collection
+    collection = chroma_client.create_collection(
+        name=collection_name,
+        metadata={"hnsw:space": distance_metric}
+    )
+
+    print(f"[OK] Created collection: {collection_name}")
+    return collection
+
+
+def batch_embed_pending_insights(config: Dict[str, Any], chroma_client, azure_client):
+    """Batch process pending insights with proper deduplication"""
+    
+    logger.info("="*80)
+    logger.info("Batch Embedding Pending Insights")
+    logger.info("="*80)
+    
+    pending_dir = Path("insights/pending")
+    if not pending_dir.exists():
+        logger.warning(f"Pending insights directory not found: {pending_dir}")
+        return
+    
+    # Load all pending insights
+    insight_files = list(pending_dir.glob("*.json"))
+    logger.info(f"[INFO] Found {len(insight_files)} pending insight files")
+    
+    if not insight_files:
+        logger.info("No pending insights to process")
+        return
+    
+    # Get or create collection
+    collection = chroma_client.get_or_create_collection(
+        name="pending_insights",
+        metadata={"hnsw:space": "cosine"}
+    )
+    
+    # Load insights with validation
+    all_insights = []
+    invalid_insights = []
+    
+    for file_path in insight_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                insight = json.load(f)
+            
+            # Normalize field names
+            insight = _normalize_insight_fields(insight, file_path)
+            
+            # Validate required fields
+            if not insight.get('step_text'):
+                logger.warning(f"Skipping {file_path.name}: missing step_text")
+                invalid_insights.append(file_path.name)
+                continue
+            
+            # Validate embedding exists
+            if not insight.get('embedding'):
+                logger.warning(f"Skipping {file_path.name}: missing embedding")
+                invalid_insights.append(file_path.name)
+                continue
+            
+            all_insights.append(insight)
+        
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in {file_path}: {e}")
+            invalid_insights.append(file_path.name)
+        except Exception as e:
+            logger.error(f"Failed to load {file_path}: {e}")
+            invalid_insights.append(file_path.name)
+    
+    if invalid_insights:
+        logger.warning(f"Skipped {len(invalid_insights)} invalid files")
+    
+    logger.info(f"[INFO] Loaded {len(all_insights)} valid insights")
+    
+    if not all_insights:
+        logger.warning("No valid insights to process")
+        return
+    
+    # ========================================
+    # DEDUPLICATION
+    # ========================================
+    from collections import defaultdict
+    
+    grouped = defaultdict(list)
+    
+    for insight in all_insights:
+        key = (insight.get('ticket_id', 'unknown'), insight.get('step_number', 0))
+        grouped[key].append(insight)
+    
+    deduplicated_insights = []
+    
+    for key, insights_group in grouped.items():
+        if len(insights_group) == 1:
+            deduplicated_insights.append(insights_group[0])
+            continue
+        
+        # Multiple entries - keep latest
+        ticket_id, step_num = key
+        latest = max(insights_group, key=lambda x: x.get('timestamp', ''))
+        deduplicated_insights.append(latest)
+        
+        logger.info(f"Deduplicated {ticket_id} step {step_num}: kept latest of {len(insights_group)} entries")
+    
+    logger.info(f"After deduplication: {len(deduplicated_insights)} unique insights (was {len(all_insights)})")
+    
+    # ========================================
+    # REBUILD LISTS FROM DEDUPLICATED DATA
+    # ========================================
+    all_insights = deduplicated_insights  # Use deduplicated list
+    all_embeddings = []
+    all_ids = []
+    all_metadatas = []
+    
+    if not all_insights:
+        logger.warning("No insights after deduplication")
+        return
+    
+    logger.info(f"Storing {len(all_insights)} insights in ChromaDB...")
+    
+    # Build data for ChromaDB
+    for insight in all_insights:
+        # Extract fields
+        ticket_id = insight.get('ticket_id', 'unknown')
+        step_num = insight.get('step_number', 0)
+        
+        # Safe type conversion
+        try:
+            step_num = int(step_num) if step_num else 0
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid step_number '{step_num}', defaulting to 0")
+            step_num = 0
+        
+        # Generate unique ID
+        timestamp = insight.get('timestamp', datetime.now().isoformat())
+        timestamp_clean = timestamp.replace(':', '').replace('-', '').replace('T', '')[:14]
+        insight_id = f"pending_{ticket_id}_step{step_num}_{timestamp_clean}"
+        
+        # Get embedding
+        embedding = insight.get('embedding')
+        if not embedding:
+            logger.warning(f"Skipping insight without embedding: {insight_id}")
+            continue
+        
+        # Prepare metadata
+        step_text = insight.get('step_text', 'N/A')
+        selector = insight.get('selector', 'N/A')
+        
+        try:
+            confidence_val = float(insight.get('confidence', 0.0))
+        except (ValueError, TypeError):
+            confidence_val = 0.0
+        
+        metadata = {
+            'step_text': str(step_text),
+            'selector': str(selector),
+            'module': str(insight.get('module', 'unknown')),
+            'ticket_id': str(ticket_id),
+            'step_number': int(step_num),
+            'confidence': float(confidence_val),
+            'feedback_type': str(insight.get('feedback_type', 'pending')),
+            'timestamp': insight.get('timestamp') or datetime.now().isoformat()
+        }
+        
+        all_ids.append(insight_id)
+        all_embeddings.append(embedding)
+        all_metadatas.append(metadata)
+    
+    # ========================================
+    # VALIDATE DATA CONSISTENCY
+    # ========================================
+    if len(all_ids) != len(all_embeddings) or len(all_ids) != len(all_metadatas):
+        logger.error(f"Data mismatch: ids={len(all_ids)}, embeddings={len(all_embeddings)}, metadata={len(all_metadatas)}")
+        return
+    
+    if not all_ids:
+        logger.warning("No valid data to store after validation")
+        return
+    
+    logger.info(f"Validated {len(all_ids)} insights ready for storage")
+    
+    # ========================================
+    # UPSERT TO CHROMADB
+    # ========================================
+    try:
+        # Check for existing entries
+        try:
+            existing = collection.get(ids=all_ids, include=[])
+            existing_ids = set(existing['ids'])
+            if existing_ids:
+                logger.info(f"Found {len(existing_ids)} existing entries (will be updated)")
+        except Exception:
+            existing_ids = set()
+        
+        # Upsert
+        collection.upsert(
+            ids=all_ids,
+            embeddings=all_embeddings,
+            metadatas=all_metadatas
+        )
+        
+        new_count = len(all_ids) - len(existing_ids)
+        updated_count = len(existing_ids)
+        
+        if updated_count > 0:
+            logger.info(f"✓ Stored {len(all_ids)} insights ({new_count} new, {updated_count} updated)")
+        else:
+            logger.info(f"✓ Stored {len(all_ids)} new insights")
+        
+        logger.info(f"Collection '{collection.name}' now contains {collection.count()} total insights")
+        
+        # ========================================
+        # ARCHIVE PROCESSED FILES
+        # ========================================
+        archive_processed_files(insight_files, all_insights)
+    
+    except Exception as e:
+        logger.error(f"Failed to store insights in ChromaDB: {e}")
+        logger.warning("Files NOT archived due to processing failure")
+        raise
+
+
+def archive_processed_files(insight_files: List[Path], processed_insights: List[Dict[str, Any]]):
+    """Archive successfully processed insight files"""
+    
+    archive_dir = Path("insights/processed")
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Build set of processed filenames
+    processed_filenames = set()
+    for insight in processed_insights:
+        if 'storage_metadata' in insight and 'filename' in insight['storage_metadata']:
+            processed_filenames.add(insight['storage_metadata']['filename'])
+    
+    if not processed_filenames:
+        logger.warning("No filenames found in processed insights metadata")
+        # Fallback: archive all files if we successfully processed something
+        if processed_insights:
+            logger.info("Using fallback: archiving all pending files")
+            processed_filenames = {f.name for f in insight_files}
+    
+    archived_count = 0
+    
+    for file_path in insight_files:
+        if file_path.name in processed_filenames:
+            # Generate archive filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            archive_filename = f"{file_path.stem}_archived_{timestamp}.json"
+            archive_path = archive_dir / archive_filename
+            
+            try:
+                # Move (not copy) to archive
+                file_path.rename(archive_path)
+                archived_count += 1
+                logger.debug(f"Archived: {file_path.name}")
+            except Exception as e:
+                logger.warning(f"Failed to archive {file_path.name}: {e}")
+    
+    if archived_count > 0:
+        logger.info(f"✓ Archived {archived_count} processed files to {archive_dir}")
+    else:
+        logger.warning("No files were archived (check storage_metadata in insights)")
+    
+    return archived_count
+
+
+def _normalize_insight_fields(insight: Dict[str, Any], file_path: Path) -> Dict[str, Any]:
+    """Normalize insight field names to standard schema"""
+    
+    # Map alternate field names to standard ones
+    field_mappings = {
+        'step_text': ['step_text', 'step', 'text', 'description', 'action'],
+        'selector': ['selector', 'correct_selector', 'expected_selector', 'css_selector'],
+        'module': ['module', 'test_module', 'component'],
+        'ticket_id': ['ticket_id', 'jira_ticket', 'ticket', 'issue_id'],
+        'step_number': ['step_number', 'step_num', 'number'],
+        'feedback_type': ['feedback_type', 'type', 'category'],
+        'confidence': ['confidence', 'score', 'certainty']
+    }
+    
+    normalized = {}
+    
+    for standard_field, alternates in field_mappings.items():
+        for alt_field in alternates:
+            if alt_field in insight:
+                normalized[standard_field] = insight[alt_field]
+                break
+        
+        # If still not found, check if standard field exists
+        if standard_field not in normalized and standard_field in insight:
+            normalized[standard_field] = insight[standard_field]
+    
+    # Copy over any additional fields
+    for key, value in insight.items():
+        if key not in normalized:
+            normalized[key] = value
+    
+    # Log if normalization changed anything
+    if set(normalized.keys()) != set(insight.keys()):
+        logger.debug(f"Normalized fields in {file_path.name}: {list(insight.keys())} → {list(normalized.keys())}")
+    
+    return normalized
+
+
 if __name__ == "__main__":
+    import sys
+
     try:
         # Load configuration
         config = load_config()
 
-        # Run setup
-        collection = setup_chromadb(config)
+        # Check for command-line arguments
+        if len(sys.argv) > 1 and sys.argv[1] == "--embed-pending":
+            # Batch embed pending insights only
+            print("\n[MODE] Batch embedding pending insights only")
 
-        print("\n[OK] Vector database setup completed successfully!")
+            azure_client = get_azure_client(config)
+            chroma_path = get_chromadb_path(config)
+
+            chroma_client = chromadb.PersistentClient(
+                path=str(chroma_path),
+                settings=Settings(anonymized_telemetry=False)
+            )
+
+            # Embed pending insights
+            count = batch_embed_pending_insights(config, chroma_client, azure_client)
+
+            print(f"\n[OK] Batch embedding completed! Processed {count} insights")
+
+        else:
+            # Full setup mode
+            print("\n[MODE] Full vector database setup")
+
+            # Run base selectors setup
+            collection = setup_chromadb(config)
+
+            # Create learned insights collection (empty initially)
+            chroma_path = get_chromadb_path(config)
+            chroma_client = chromadb.PersistentClient(
+                path=str(chroma_path),
+                settings=Settings(anonymized_telemetry=False)
+            )
+
+            azure_client = get_azure_client(config)
+
+            print("\n" + "=" * 80)
+            print("Creating Learned Insights Collection")
+            print("=" * 80)
+
+            learned_collection = create_learned_insights_collection(config, chroma_client)
+
+            # Check if there are pending insights to embed
+            vector_search_config = config.get('vector_search', {})
+            pending_folder = Path(vector_search_config.get('pending_folder', 'insights/pending'))
+
+            pending_files = list(pending_folder.glob("**/*.json")) if pending_folder.exists() else []
+
+            if pending_files:
+                print(f"\n[INFO] Found {len(pending_files)} pending insights")
+                user_input = input("Do you want to embed them now? (y/n): ")
+                if user_input.lower() == 'y':
+                    batch_embed_pending_insights(config, chroma_client, azure_client)
+            else:
+                print("\n[INFO] No pending insights found. Collection created empty.")
+
+            print("\n[OK] Vector database setup completed successfully!")
 
     except Exception as e:
         print(f"\n[ERROR] Setup failed: {e}")

@@ -19,12 +19,13 @@ login:
 # Wait Times (milliseconds)
 wait_times:
   after_login: 3000
-  after_navigation: 2000
+  after_navigation: 5000    # Increased from 2000ms to 5000ms for table data loading
   after_click: 1000
   after_type: 1500
   after_dropdown: 1500
   after_save: 3000          # Wait longer after save/submit for success messages
   page_load: 5000
+  before_text_verification: 2000  # FIX: Wait before L3 text verification (success messages fade quickly)
 
 # Folder Paths (relative to base_folder)
 folders:
@@ -41,7 +42,7 @@ folders:
 # AZURE OPENAI CONFIGURATION
 # ============================================================================
 azure_openai:
-  api_key: "98dkVOUDLG4wm9OCmF8pxnR48BoUCPYKzfI9p4zYGP5uVh7TiLLwJQQJ99BDAC5RqLJXJ3w3AAABACOGWUeW"
+  api_key: "${AZURE_OPENAI_API_KEY}"  # Set via environment variable
   endpoint: "https://ai2ets.openai.azure.com/"
   api_version: "2024-02-15-preview"
   
@@ -56,21 +57,55 @@ azure_openai:
     dimensions: 1536
     batch_size: 50                          # Batch embed up to 50 items
     timeout: 30                             # API timeout in seconds
-
+jira:
+  url: "https://rb-tracker.bosch.com/tracker03"
+  username: "Raashi.Bathla@in.bosch.com"
+  api_token: "NzM5NjU4Nzg2MDczOj5m518VFGjkUX5buaJi+S3rss9S"
 # ============================================================================
 # VECTOR DATABASE CONFIGURATION (ChromaDB)
 # ============================================================================
 vector_database:
   type: "chromadb"
   persist_directory: "./data/chromadb_llm"  # New ChromaDB with LLM conversion
-  
+
   # Collections
   collections:
     selectors_base: "selectors_base_collection"
+    learned_insights: "learned_insights_collection"  # NEW: Learned from tester feedback
     runtime_learned: "runtime_learned_collection"
-  
+
   # Distance Metric
   distance_metric: "cosine"                 # cosine, l2, ip
+
+# ============================================================================
+# VECTOR SEARCH CONFIGURATION (NEW)
+# ============================================================================
+vector_search:
+  # Search Result Limits
+  learned_max_results: 3        # Top N from learned_insights_collection
+  pending_max_results: 3        # Top N from insights/pending/ folder (LLM search)
+  base_max_results: 5           # Top N from selectors_base_collection
+
+  # Similarity Thresholds
+  similarity_threshold: 0.85    # Minimum similarity for learned matches
+  pending_threshold: 0.80       # Minimum similarity for pending insights (LLM)
+
+  # Confidence Adjustments
+  learned_confidence_boost: 0.2 # Boost confidence for learned selectors
+  pending_confidence_boost: 0.15 # Boost confidence for pending selectors
+
+  # Pending Insights Management
+  pending_folder: "insights/pending"
+  integrated_folder: "insights/integrated"
+  batch_embedding_threshold: 50  # Auto-trigger batch when pending reaches this count
+
+  # LLM Comparison Settings (for pending insights)
+  llm_comparison:
+    enabled: true
+    model: "gpt-4o"              # Use available model for comparisons
+    temperature: 0.1
+    max_tokens: 500
+    batch_comparison: true        # Compare all pending in one call
 
 # ============================================================================
 # SELECTOR CONFIGURATION
@@ -82,7 +117,7 @@ selectors:
   # Embedding Strategy
   embedding_strategy:
     # Use LLM to convert technical fields to natural language
-    use_llm_conversion: true
+    use_llm_conversion: false
 
     # Fields to send to LLM for natural language conversion
     include_fields:
@@ -364,7 +399,7 @@ performance:
   
   # Timeouts
   page_load_timeout: 30000                  # 30 seconds
-  element_wait_timeout: 10000               # 10 seconds
+  element_wait_timeout: 30000               # 30 seconds (increased from 10s for slow-loading tables)
   api_call_timeout: 30                      # 30 seconds
   
   # Rate Limiting
@@ -483,33 +518,218 @@ agents:
     enabled: true
     model: "gpt-4o"
     temperature: 0.1
-    max_tokens: 2000
-
+    max_tokens: 3000
+  
     system_prompt: |
-      You are a Jira ticket parser. Extract test steps from any ticket format.
-      Parse ticket text and identify: module, test steps, expected results.
-      Handle various formats (numbered lists, tables, bullet points).
-
-      OUTPUT FORMAT:
+      You are an expert Jira ticket parser for test automation. Your task is to:
+      1. Extract test steps from Jira tickets in ANY format
+      2. Normalize steps into a consistent numbered structure
+      3. Detect the module from context keywords (Teststep, Tests, Equipment, etc.)
+      4. Extract expected results from acceptance criteria
+      5. ALWAYS add "Login" as step 1 if not explicitly mentioned
+      6. If module is not explicitly mentioned, infer it from navigation steps (e.g., "Navigate to teststep" → module = "Teststep")
+  
+      IMPORTANT RULES:
+      - MANDATORY: First step MUST always be "Login" (add if missing)
+      - Convert arrow notation (→) to numbered steps
+      - Parse unstructured paragraphs with "then", commas into discrete steps
+      - Remove filler words: "then", "and", "also", "after that"
+      - Merge short actions into single steps when logical
+      - Extract expected results from "Acceptance Criteria" or inline expectations
+      - MODULE DETECTION:
+        * Check for explicit module mentions in title/description
+        * If not found, look for "Navigate to X" or "Go to X" patterns
+        * Extract X as the module name (e.g., "Navigate to runs" → module = "Teststep")
+        * Map UI names to code names: "runs" → "Teststep", "tasks" → "Tests"
+        * Default to "Common" if no clear module found
+  
+      OUTPUT FORMAT (strict JSON):
       {
         "ticket_id": "RBPLCD-XXXX",
-        "title": "...",
-        "module": "Teststep",
+        "title": "exact ticket title",
+        "module": "Teststep|Tests|Equipment|...",
         "steps": [
-          {"number": 1, "text": "Login", "expected": "Dashboard visible"}
+          {
+            "number": 1,
+            "text": "Login",
+            "expected": null
+          },
+          {
+            "number": 2,
+            "text": "clear action description",
+            "expected": "expected result or null"
+          }
         ]
       }
-
+  
+    # =========================================================================
+    # FEW-SHOT EXAMPLES
+    # =========================================================================
     format_examples: |
-      Format 1: "1. Login to app\nExpected: Dashboard loads"
-      Format 2: "Step 1: Navigate | Expected: List shown"
+      ---
+      EXAMPLE 1: Numbered List Format with Explicit Module
+      ---
+      INPUT:
+      Ticket ID: RBPLCD-8835
+      Title: edit part details
+      Description:
+      Problem Description:
+      editing details for parts from teststep is not working
+  
+      Steps to Reproduce:
+      1. Login
+      2. navigate to teststep
+      3. click on default_Measurement01
+      4. open parts accordion
+      5. click on edit button of default_testobject_01
+      6. clear whatever is written inside tagID and write 5
+      7. click on save
+      8. "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+      9. click on edit button of default_testobject_01 again
+      10. clear tagID
+      11. save again
+  
+      Acceptance Criteria:
+      "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+  
+      OUTPUT:
+      {
+        "ticket_id": "RBPLCD-8835",
+        "title": "edit part details",
+        "module": "Teststep",
+        "steps": [
+          {"number": 1, "text": "Login", "expected": null},
+          {"number": 2, "text": "Navigate to teststep", "expected": null},
+          {"number": 3, "text": "Click on default_Measurement01", "expected": null},
+          {"number": 4, "text": "Open parts accordion", "expected": null},
+          {"number": 5, "text": "Click on edit button of default_testobject_01", "expected": null},
+          {"number": 6, "text": "Clear tagID and write 5", "expected": null},
+          {"number": 7, "text": "Click on save", "expected": "Successfully edited: 'TestObject' default_testobject_01 message should be displayed"},
+          {"number": 8, "text": "Click on edit button of default_testobject_01 again", "expected": null},
+          {"number": 9, "text": "Clear tagID", "expected": null},
+          {"number": 10, "text": "Click on save", "expected": "Successfully edited: 'TestObject' default_testobject_01 message should be displayed"}
+        ]
+      }
+  
+      ---
+      EXAMPLE 2: Arrow Notation Format - Module Inferred from Navigation
+      ---
+      INPUT:
+      Ticket ID: RBPLCD-8859
+      Title: Product filter is not working as expected
+      Description:
+      Problem Description:
+      When attempting to apply the product filter, clicking Cancel does not discard the action; instead, the filter is still applied.
+  
+      Steps to Reproduce:
+      Navigate to tasks → click on product filter → click on any product → click cancel
+  
+      OUTPUT:
+      {
+        "ticket_id": "RBPLCD-8859",
+        "title": "Product filter is not working as expected",
+        "module": "Tests",
+        "steps": [
+          {"number": 1, "text": "Login", "expected": null},
+          {"number": 2, "text": "Navigate to tasks", "expected": null},
+          {"number": 3, "text": "Click on product filter", "expected": null},
+          {"number": 4, "text": "Click on any product", "expected": null},
+          {"number": 5, "text": "Click cancel", "expected": "Filter should not be applied"}
+        ]
+      }
+  
+      ---
+      EXAMPLE 3: Unstructured Paragraph Format - Module from "Navigate to runs"
+      ---
+      INPUT:
+      Ticket ID: RBPLCD-8955
+      Title: Unable to add external reference in details view of teststep
+      Description:
+      Problem Description:
+      Unable to add external reference in details view of teststep
+  
+      Steps to Reproduce:
+      Navigate to runs then click on default_Measurement01 to open details view, then click on external reference accordion and click on add button, then click on Description and type External, then click on Url and type Reference, then click on save button
+  
+      Acceptance Criteria:
+      "Successfully edited: 'TestStep' default_Measurement01" should be displayed after clicking on save button.
+  
+      OUTPUT:
+      {
+        "ticket_id": "RBPLCD-8955",
+        "title": "Unable to add external reference in details view of teststep",
+        "module": "Teststep",
+        "steps": [
+          {"number": 1, "text": "Login", "expected": null},
+          {"number": 2, "text": "Navigate to runs", "expected": null},
+          {"number": 3, "text": "Click on default_Measurement01 to open details view", "expected": null},
+          {"number": 4, "text": "Click on external reference accordion", "expected": null},
+          {"number": 5, "text": "Click on add button", "expected": null},
+          {"number": 6, "text": "Click on Description and type External", "expected": null},
+          {"number": 7, "text": "Click on Url and type Reference", "expected": null},
+          {"number": 8, "text": "Click on save button", "expected": "Successfully edited: 'TestStep' default_Measurement01 message should be displayed"}
+        ]
+      }
+  
+      ---
+      EXAMPLE 4: No Login Step Mentioned - Must Add as Step 1
+      ---
+      INPUT:
+      Ticket ID: RBPLCD-9001
+      Title: Create new project
+      Description:
+      Steps to Reproduce:
+      Navigate to projects → click Create New button → enter project name → click Save
+  
+      OUTPUT:
+      {
+        "ticket_id": "RBPLCD-9001",
+        "title": "Create new project",
+        "module": "Projects",
+        "steps": [
+          {"number": 1, "text": "Login", "expected": null},
+          {"number": 2, "text": "Navigate to projects", "expected": null},
+          {"number": 3, "text": "Click Create New button", "expected": null},
+          {"number": 4, "text": "Enter project name", "expected": null},
+          {"number": 5, "text": "Click Save", "expected": "Project created successfully"}
+        ]
+      }
+  
+      ---
+      END OF EXAMPLES
+      ---
+  
+  # jira_agent:
+  #   enabled: true
+  #   model: "gpt-4o"
+  #   temperature: 0.1
+  #   max_tokens: 2000
+
+  #   system_prompt: |
+  #     You are a Jira ticket parser. Extract test steps from any ticket format.
+  #     Parse ticket text and identify: module, test steps, expected results.
+  #     Handle various formats (numbered lists, tables, bullet points).
+
+  #     OUTPUT FORMAT:
+  #     {
+  #       "ticket_id": "RBPLCD-XXXX",
+  #       "title": "...",
+  #       "module": "Teststep",
+  #       "steps": [
+  #         {"number": 1, "text": "Login", "expected": "Dashboard visible"}
+  #       ]
+  #     }
+
+  #   format_examples: |
+  #     Format 1: "1. Login to app\nExpected: Dashboard loads"
+  #     Format 2: "Step 1: Navigate | Expected: List shown"
 
   # -------------------------------------------------------------------------
   # ContextAgent - Execution Context Tracking
   # -------------------------------------------------------------------------
   context_agent:
     enabled: true
-    model: "gpt-4o-mini"
+    model: "gpt-4o"
     temperature: 0
     max_tokens: 500
 
@@ -522,7 +742,7 @@ agents:
   # -------------------------------------------------------------------------
   learning_agent:
     enabled: true
-    model: "gpt-4o-mini"
+    model: "gpt-4o"
     temperature: 0.1
     max_tokens: 1000
 

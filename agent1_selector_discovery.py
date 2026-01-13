@@ -60,8 +60,8 @@ class Agent1SelectorDiscovery:
         # Load agent configuration
         self.agent_config = config['agent1_selector_discovery']
 
-        logger.info(f"Agent 1 initialized with collection: {collection_name}")
-        logger.info(f"Collection contains {self.collection.count()} selectors")
+        logger.debug(f"Agent 1 initialized with collection: {collection_name}")
+        logger.debug(f"Collection contains {self.collection.count()} selectors")
 
 
     def generate_embedding(self, text: str) -> List[float]:
@@ -101,12 +101,12 @@ class Agent1SelectorDiscovery:
             ChromaDB query results
         """
         # Generate embedding for step
-        logger.info(f"Generating embedding for: '{step_text}'")
+        logger.debug(f"Generating embedding for: '{step_text}'")
         step_embedding = self.generate_embedding(step_text)
 
         # Build module filter (current module + common modules)
         module_filter = [current_module] + self.config['modules']['common_modules']
-        logger.info(f"Module filter: {module_filter}")
+        logger.debug(f"Module filter: {module_filter}")
 
         # Get n_results from config if not specified
         if n_results is None:
@@ -121,19 +121,29 @@ class Agent1SelectorDiscovery:
                     {"page_context": page_context}
                 ]
             }
-            logger.info(f"Page context filter: {page_context}")
+            logger.debug(f"Page context filter: {page_context}")
         else:
             # Simple module filter only
             where_filter = {"module": {"$in": module_filter}}
 
         # Query ChromaDB with metadata filters
-        results = self.collection.query(
-            query_embeddings=[step_embedding],
-            n_results=n_results,
-            where=where_filter
-        )
-
-        return results
+        try:
+            results = self.collection.query(
+                query_embeddings=[step_embedding],
+                n_results=n_results,
+                where=where_filter
+            )
+            return results
+        except Exception as e:
+            logger.error(f"ChromaDB query failed: {e}")
+            logger.warning("Returning empty result due to ChromaDB error - system will fall back to L2")
+            # Return empty result structure (system will fall back to L2/L3)
+            return {
+                'ids': [[]],
+                'distances': [[]],
+                'metadatas': [[]],
+                'documents': [[]]
+            }
 
 
     def calculate_confidence(
@@ -195,12 +205,12 @@ class Agent1SelectorDiscovery:
             - selector_result: Best matching selector with confidence
             - candidates: All candidates with scores
         """
-        logger.info("=" * 80)
-        logger.info(f"Agent 1: Discovering selector")
-        logger.info(f"Step: {step_text}")
-        logger.info(f"Module: {current_module}")
+        logger.debug("=" * 80)
+        logger.debug(f"Agent 1: Discovering selector")
+        logger.debug(f"Step: {step_text}")
+        logger.debug(f"Module: {current_module}")
         if page_context:
-            logger.info(f"Page context: {page_context}")
+            logger.debug(f"Page context: {page_context}")
 
         # Query ChromaDB
         results = self.query_selectors(step_text, current_module, page_context, n_results)
@@ -245,7 +255,7 @@ class Agent1SelectorDiscovery:
 
             candidates.append(candidate)
 
-            logger.info(f"Candidate {i+1}: {candidate['selector']} " +
+            logger.debug(f"Candidate {i+1}: {candidate['selector']} " +
                        f"(conf: {confidence:.3f}, dist: {distance:.3f}, " +
                        f"module: {metadata.get('module', 'unknown')})")
 
@@ -255,11 +265,11 @@ class Agent1SelectorDiscovery:
         # Get best candidate
         best_candidate = candidates[0]
 
-        logger.info("-" * 80)
-        logger.info(f"Best match: {best_candidate['selector']}")
-        logger.info(f"Confidence: {best_candidate['confidence']:.3f}")
-        logger.info(f"Agent: {best_candidate['agent_used']}")
-        logger.info("=" * 80)
+        logger.debug("-" * 80)
+        logger.debug(f"Best match: {best_candidate['selector']}")
+        logger.debug(f"Confidence: {best_candidate['confidence']:.3f}")
+        logger.debug(f"Agent: {best_candidate['agent_used']}")
+        logger.debug("=" * 80)
 
         return {
             "selector_result": best_candidate,

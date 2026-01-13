@@ -15,7 +15,8 @@ def generate_html_report(
     step_results: List[Dict],
     overall_status: str,
     execution_time: float,
-    config: Dict
+    config: Dict,
+    timestamp: str = None
 ) -> str:
     """
     Generate HTML report for test execution
@@ -27,6 +28,7 @@ def generate_html_report(
         overall_status: PASSED/FAILED
         execution_time: Total execution time
         config: Configuration dictionary
+        timestamp: Optional pre-generated timestamp (for consistent naming across artifacts)
 
     Returns:
         Path to generated HTML report
@@ -35,8 +37,9 @@ def generate_html_report(
     reports_folder = Path(config['folders']['reports'])
     reports_folder.mkdir(parents=True, exist_ok=True)
 
-    # Generate timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Use provided timestamp or generate new one
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     report_filename = f"{ticket_id}_{timestamp}_report.html"
     report_path = reports_folder / report_filename
 

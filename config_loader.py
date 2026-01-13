@@ -4,11 +4,26 @@ Loads and validates YAML configuration file
 """
 
 import yaml
+import os
+import re
 from pathlib import Path
 from typing import Dict, Any
 from openai import AzureOpenAI
 import chromadb
 from chromadb.config import Settings
+
+
+def _load_env_file(env_path: str = ".env"):
+    """Load environment variables from .env file"""
+    env_file = Path(env_path)
+    if env_file.exists():
+        with open(env_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        os.environ[key.strip()] = value.strip()
 
 
 def load_config(config_path: str = "plcdtestassistant.yaml") -> Dict[str, Any]:
@@ -26,6 +41,9 @@ def load_config(config_path: str = "plcdtestassistant.yaml") -> Dict[str, Any]:
         yaml.YAMLError: If YAML parsing fails
         ValueError: If required sections are missing
     """
+    # Load .env file if it exists
+    _load_env_file()
+
     config_file = Path(config_path)
 
     if not config_file.exists():
@@ -40,11 +58,37 @@ def load_config(config_path: str = "plcdtestassistant.yaml") -> Dict[str, Any]:
     except yaml.YAMLError as e:
         raise yaml.YAMLError(f"Error parsing YAML file: {e}")
 
+    # Expand environment variables in config
+    config = _expand_env_vars(config)
+
     # Validate configuration
     if not validate_config(config):
         raise ValueError("Configuration validation failed")
 
     return config
+
+
+def _expand_env_vars(config: Any) -> Any:
+    """
+    Recursively expand environment variables in config.
+    Supports ${VAR_NAME} syntax.
+    """
+    if isinstance(config, dict):
+        return {k: _expand_env_vars(v) for k, v in config.items()}
+    elif isinstance(config, list):
+        return [_expand_env_vars(item) for item in config]
+    elif isinstance(config, str):
+        # Match ${VAR_NAME} pattern
+        pattern = r'\$\{([^}]+)\}'
+        matches = re.findall(pattern, config)
+        for var_name in matches:
+            env_value = os.environ.get(var_name, '')
+            if not env_value:
+                raise ValueError(f"Environment variable '{var_name}' is not set")
+            config = config.replace(f'${{{var_name}}}', env_value)
+        return config
+    else:
+        return config
 
 
 def validate_config(config: Dict[str, Any]) -> bool:
@@ -117,15 +161,21 @@ def get_azure_client(config: Dict[str, Any]) -> AzureOpenAI:
     """
     try:
         azure_config = config['azure_openai']
-
-        # Disable proxy for Azure OpenAI to avoid connection issues
         import httpx
+
+        # Create httpx client WITH proxy support (needed for internal Bosch Azure endpoints)
+        # Proxy settings will be picked up from environment variables automatically
+        http_client = httpx.Client(
+            verify=False,  # Disable SSL verification for corporate proxies
+            timeout=30.0
+            # proxies parameter not needed - httpx uses environment variables by default
+        )
 
         client = AzureOpenAI(
             api_key=azure_config['api_key'],
             api_version=azure_config['api_version'],
             azure_endpoint=azure_config['endpoint'],
-            http_client=httpx.Client(proxy=None, verify=False)
+            http_client=http_client
         )
 
         return client

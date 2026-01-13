@@ -1,3 +1,68 @@
-nul
-.venv
-.pytest_cache
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VS Code settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Test and coverage outputs
+.coverage
+htmlcov/
+*.cover
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+Logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Playwright output
+playwright-report/
+test-results/
+screenshots/
+
+# Reports and artifacts
+Reports/
+artifacts/
+*.html
+
+# Vector DB and ChromaDB
+chroma/
+chromadb/
+*.db
+data/
+
+# Insights and session data
+insights/raw/
+insights/pending/
+insights/sessions/
+insights/consolidated/
+insights/integrated/
+insights/
+
+# Environment and config files
+.env
+*.yaml
+*.yml
+
+# Output folders
+Videos/
+Generated_Scripts/
+Jira_Tickets/
+
+# Media files
+*.webm

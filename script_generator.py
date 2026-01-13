@@ -13,7 +13,8 @@ def generate_playwright_script(
     ticket_id: str,
     ticket_data: Dict,
     step_results: List[Dict],
-    config: Dict
+    config: Dict,
+    timestamp: str = None
 ) -> str:
     """
     Generate executable Playwright Python test script
@@ -23,6 +24,7 @@ def generate_playwright_script(
         ticket_data: Parsed ticket data
         step_results: List of step execution results
         config: Configuration dictionary
+        timestamp: Optional pre-generated timestamp (for consistent naming across artifacts)
 
     Returns:
         Path to generated script file
@@ -31,8 +33,9 @@ def generate_playwright_script(
     scripts_folder = Path(config['folders']['generated_scripts'])
     scripts_folder.mkdir(parents=True, exist_ok=True)
 
-    # Generate timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Use provided timestamp or generate new one
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     script_filename = f"{ticket_id}_{timestamp}_test.py"
     script_path = scripts_folder / script_filename
 
