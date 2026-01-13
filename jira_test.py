@@ -2,7 +2,7 @@ from jira import JIRA
 
 jira = JIRA(
     server="https://rb-tracker.bosch.com/tracker03",
-    token_auth="NzM5NjU4Nzg2MDczOj5m518VFGjkUX5buaJi+S3rss9S"
+    token_auth="your_auth_token"
 )
 
 issue = jira.issue("RBPLCD-8554")
