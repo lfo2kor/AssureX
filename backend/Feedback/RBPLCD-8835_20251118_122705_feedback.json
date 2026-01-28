@@ -1,0 +1,42 @@
+{
+  "ticket_id": "RBPLCD-8835",
+  "module": "Teststep",
+  "original_report": "Reports/RBPLCD-8835_20251118_122032_report.html",
+  "feedback_date": "2025-11-18T12:27:05.683377",
+  "corrections_count": 3,
+  "corrections": [
+    {
+      "step_number": 4,
+      "step_text": "open parts accordion",
+      "old_selector": "mat-expansion-panel-header[role='button']",
+      "correct_selector": "[data-expensionpanelheader=\"aeName.UnitUnderTest.names\"]",
+      "reason": "Specific Parts accordion, not generic expansion panel",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "L2",
+      "original_confidence": 0.6
+    },
+    {
+      "step_number": 5,
+      "step_text": "click on edit button of parts default_testobject_01",
+      "old_selector": "[data-detailview='detailView']",
+      "correct_selector": "[data-editnode=\"default_testobject_01\"]",
+      "reason": "data-editnode data selector is for edit button default_testobject_01",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "L2",
+      "original_confidence": 0.67
+    },
+    {
+      "step_number": 6,
+      "step_text": "Click on Type drop down",
+      "old_selector": "[data-attribute='Type']",
+      "correct_selector": "[data-attributegroupattribute=\"Type\"]",
+      "reason": "data selector for the type drop down",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "L1",
+      "original_confidence": 0.58
+    }
+  ]
+}

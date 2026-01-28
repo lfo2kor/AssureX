@@ -1,0 +1,31 @@
+{
+  "ticket_id": "RBPLCD-8835",
+  "module": "Teststep",
+  "original_report": "Reports/RBPLCD-8835_20251118_111718_report.html",
+  "feedback_date": "2025-11-18T11:32:52.027709",
+  "corrections_count": 2,
+  "corrections": [
+    {
+      "step_number": 4,
+      "step_text": "open parts accordion",
+      "old_selector": "mat-expansion-panel-header[role='button']",
+      "correct_selector": "data-expensionpanelheader=\"aeName.UnitUnderTest.names\"",
+      "reason": "This data selector is already available in the json file. accordion is expension panel header and parts are unit under test",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "Runtime",
+      "original_confidence": 0.89
+    },
+    {
+      "step_number": 6,
+      "step_text": "Click on Type and select “Type 5” from drop down",
+      "old_selector": "[data-attribute='Type']",
+      "correct_selector": "data-attributegroupattribute=\"Type\"",
+      "reason": "this is a drop down element and type 5 is item select from the drop down.",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "L1",
+      "original_confidence": 0.55
+    }
+  ]
+}

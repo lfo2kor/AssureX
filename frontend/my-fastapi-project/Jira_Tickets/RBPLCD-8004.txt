@@ -1,0 +1,12 @@
+[RBPLCD-8004] Navigate between teststeps and verify attributes
+ 
+  Module: Teststep
+ 
+  Steps:
+  1. Login
+  2. Click Runs link in sidebar to navigate to Teststep module
+  3. Click on table row for Teststep named default_Measurement01
+  4. Verify teststep name default_Measurement01 is displayed in details header
+  5. Click to expand Details accordion section
+  6. Verify Name attribute is displayed
+  7. Verify Id attribute is displayed

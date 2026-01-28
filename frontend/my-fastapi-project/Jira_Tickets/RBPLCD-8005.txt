@@ -1,0 +1,18 @@
+  RBPLCD-8005
+ 
+  Title: Copy teststep and verify operation
+  Module: Teststep
+ 
+  [RBPLCD-8005] Copy teststep and verify operation
+ 
+  Module: Teststep
+ 
+  Steps:
+  1. Login
+  2. Click Runs link in sidebar to navigate to Teststep module
+  3. Click on table row for Teststep named default_Measurement01
+  4. Click options button to open actions menu
+  5. Click Copy button
+  6. Verify copy dialog is displayed
+  7. Click Copy button to copy teststep
+  8. Verify success message is displayed

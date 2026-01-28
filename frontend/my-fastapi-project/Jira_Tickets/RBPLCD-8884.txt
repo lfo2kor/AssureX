@@ -1,0 +1,40 @@
+[RBPLCD-8884] Unable to add external reference: 2025-10-12  Updated: 2025-10-17 
+
+Status:	Open
+Project:	RB-PLCD
+
+Component/s:	Sequences 
+
+Affects Version/s:	None 
+Fix Version/s:	None 
+
+Type: 	Bug/Problem 	Priority: 	Medium 
+Reporter: 	Bathla Raashi (BD/TOA-ETS1) 
+Assignee: 	Unassigned 
+Resolution: 	Unresolved 	Votes: 	0 
+Labels: 	TestSequences 
+Remaining Estimate:	Not Specified 
+Time Spent:	Not Specified 
+Original Estimate:	Not Specified 
+Environment: 	http://fe0vm03313.de.bosch.com/XC-201831/client/login
+
+
+
+
+
+ Description  	 
+Problem Description:
+not able to add External reference
+Steps to Reproduce:
+1. Login 
+2. Click Sequences link in sidebar to navigate to Sequences module.
+3. Click table row for Sequence named Enduration test.
+4. Click to expand External References accordion section.
+5. Click Add (+) button to add a new external reference.
+6. Enter "test" in the Description input field.
+7. Enter "http://fe0vm03313.de.bosch.com/rbplcd_t/client" in the URL input field.
+8. Click Save button.
+9. Verify success message "Successfully edited: 'KeyParameters' Enduration test" is displayed.
+
+
+Generated at Fri Oct 17 13:36:37 CEST 2025 by Bathla Raashi (BD/TOA-ETS1) using Jira 9.12.25#9120025-sha1:62b4d85e419ed49eeb00f21ebe7ccc8e230003f0. 

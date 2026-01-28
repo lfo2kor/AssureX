@@ -1,0 +1,18 @@
+# PLCD Test Assistant - Minimal Requirements
+# Install with: pip install -r requirements_minimal.txt
+
+# Core Dependencies
+playwright==1.48.0
+chromadb==1.3.5
+openai==1.57.4
+pyyaml==6.0.2
+Pillow==11.0.0
+
+# ChromaDB Dependencies
+httpx==0.28.1
+numpy==1.26.4
+onnxruntime==1.21.1
+pydantic==2.10.6
+requests==2.32.3
+tenacity==9.0.0
+tokenizers==0.21.1

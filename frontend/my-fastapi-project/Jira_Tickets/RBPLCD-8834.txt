@@ -1,0 +1,32 @@
+[RBPLCD-8834] Issue While Copying Teststep from one Test to another Created: 2025-09-16  Updated: 2025-09-16 
+Status:	Open
+Project:	RB-PLCD
+Component/s:	None 
+Affects Version/s:	None 
+Fix Version/s:	None 
+
+Type: 	Bug/Problem 	Priority: 	Medium 
+Reporter: 	Bathla Raashi (BD/TOA-ETS1) 
+Assignee: 	Unassigned 
+Resolution: 	Unresolved 	Votes: 	0 
+Labels: 	None 
+Remaining Estimate:	Not Specified 
+Time Spent:	Not Specified 
+Original Estimate:	Not Specified 
+Environment: 	http://fe0vm03313.de.bosch.com/rbplcd_t/client/login
+
+
+
+
+ Description  	 
+Problem Description:
+If a test already exists in the project, it should be visible during the copy process currently, it's not. Additionally, after switching the project, the test retains previous values that don't actually exist in the selected project
+Steps to Reproduce:
+1.	Login
+2.	Navigate to Projects
+3.	create a new task under default_StructureLevel_1
+4.	 go to Tasks and open default_test_meas
+5.	 Create a run inside it, and try copying that run into the newly created task under default_StructureLevel_1.
+ 
+
+Generated at Tue Sep 16 09:10:18 CEST 2025 by Bathla Raashi (BD/TOA-ETS1) using Jira 9.12.25#9120025-sha1:62b4d85e419ed49eeb00f21ebe7ccc8e230003f0. 

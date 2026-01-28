@@ -1,0 +1,1223 @@
+{
+  "summary": {
+    "total_selectors": 400,
+    "unique_combinations": 329,
+    "shared_selectors": 46,
+    "unique_selectors": 283,
+    "identical_context": 41,
+    "different_context": 5
+  },
+  "shared_selectors": {
+    "data-cell=title": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 15,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 16,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=shared": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 23,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 24,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=dashboardWidget": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 31,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 32,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=changeDate": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 39,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 40,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=userId": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 47,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 48,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=edit": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 56,
+          "context": [
+            "edit"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 57,
+          "context": [
+            "edit"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=copy": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 64,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 65,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=delete": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 72,
+          "context": [
+            "delete"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 73,
+          "context": [
+            "delete"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cell=view": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 120,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "all-query",
+          "filePath": "src/app/all-query/all-query.component.html",
+          "lineNumber": 121,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-attributeGroup=attributeGroup": {
+      "count": 3,
+      "identical_context": false,
+      "occurrences": [
+        {
+          "module": "attribute-group",
+          "filePath": "src/app/attribute-group/attribute-group.component.html",
+          "lineNumber": 2,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "attribute-groups",
+          "filePath": "src/app/attribute-groups/attribute-groups.component.html",
+          "lineNumber": 20,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "attribute-groups",
+          "filePath": "src/app/attribute-groups/attribute-groups.component.html",
+          "lineNumber": 43,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-attributeGroupAttribute=attribute": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "attribute-group",
+          "filePath": "src/app/attribute-group/attribute-group.component.html",
+          "lineNumber": 10,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "attribute-group",
+          "filePath": "src/app/attribute-group/attribute-group.component.html",
+          "lineNumber": 52,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-attributeGroups=attributeGroups": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "attribute-groups",
+          "filePath": "src/app/attribute-groups/attribute-groups.component.html",
+          "lineNumber": 5,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "attribute-groups",
+          "filePath": "src/app/attribute-groups/attribute-groups.component.html",
+          "lineNumber": 28,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-editIcon=editIcon": {
+      "count": 3,
+      "identical_context": false,
+      "occurrences": [
+        {
+          "module": "bulk-operation",
+          "filePath": "src/app/bulk-operation/bulk-operation.component.html",
+          "lineNumber": 6,
+          "context": [
+            "icon",
+            "edit"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 63,
+          "context": [
+            "icon",
+            "primary-action",
+            "edit"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "result-entry",
+          "filePath": "src/app/result-entry/result-entry.component.html",
+          "lineNumber": 34,
+          "context": [
+            "icon",
+            "edit"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-moveIcon=documentCopyIcon": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "bulk-operation",
+          "filePath": "src/app/bulk-operation/bulk-operation.component.html",
+          "lineNumber": 13,
+          "context": [
+            "icon"
+          ],
+          "priority": 7
+        },
+        {
+          "module": "bulk-operation",
+          "filePath": "src/app/bulk-operation/bulk-operation.component.html",
+          "lineNumber": 20,
+          "context": [
+            "icon"
+          ],
+          "priority": 7
+        }
+      ]
+    },
+    "data-statusButton=statusButton": {
+      "count": 2,
+      "identical_context": false,
+      "occurrences": [
+        {
+          "module": "bulk-operation",
+          "filePath": "src/app/bulk-operation/bulk-operation.component.html",
+          "lineNumber": 54,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "status-edit",
+          "filePath": "src/app/status-edit/status-button.component.html",
+          "lineNumber": 2,
+          "context": [
+            "button"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "data-openCreateDialogAddIcon=addIcon": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "create-new",
+          "filePath": "src/app/create-new/create-new.component.html",
+          "lineNumber": 14,
+          "context": [
+            "icon",
+            "dialog",
+            "create",
+            "add"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "create-new",
+          "filePath": "src/app/create-new/create-new.component.html",
+          "lineNumber": 38,
+          "context": [
+            "icon",
+            "dialog",
+            "create",
+            "add"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-closeIcon=CloseIcon": {
+      "count": 3,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "custom-messages",
+          "filePath": "src/app/custom-messages/custom-messages.component.html",
+          "lineNumber": 21,
+          "context": [
+            "icon",
+            "close"
+          ],
+          "priority": 7
+        },
+        {
+          "module": "feedback",
+          "filePath": "src/app/feedback/feedback.component.html",
+          "lineNumber": 6,
+          "context": [
+            "icon",
+            "close"
+          ],
+          "priority": 7
+        },
+        {
+          "module": "search-bar",
+          "filePath": "src/app/search-bar/search-bar.component.html",
+          "lineNumber": 16,
+          "context": [
+            "icon",
+            "close"
+          ],
+          "priority": 7
+        }
+      ]
+    },
+    "data-sequencePanel=sequencePanel": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "detail-view",
+          "filePath": "src/app/detail-view/detail-view.component.html",
+          "lineNumber": 226,
+          "context": [
+            "accordion"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "detail-view",
+          "filePath": "src/app/detail-view/detail-view.component.html",
+          "lineNumber": 290,
+          "context": [
+            "accordion"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "data-saveBtn=SaveBtn": {
+      "count": 3,
+      "identical_context": false,
+      "occurrences": [
+        {
+          "module": "detail-view",
+          "filePath": "src/app/detail-view/detail-view.component.html",
+          "lineNumber": 328,
+          "context": [
+            "save"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "result-entry",
+          "filePath": "src/app/result-entry/result-entry.component.html",
+          "lineNumber": 61,
+          "context": [
+            "button",
+            "primary-action",
+            "save"
+          ],
+          "priority": 10
+        },
+        {
+          "module": "visual-investigation",
+          "filePath": "src/app/visual-investigation/visual-investigation.component.html",
+          "lineNumber": 25,
+          "context": [
+            "save"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "data-cancelBtn=CancelBtn": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "detail-view",
+          "filePath": "src/app/detail-view/detail-view.component.html",
+          "lineNumber": 332,
+          "context": [
+            "button",
+            "close"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "result-entry",
+          "filePath": "src/app/result-entry/result-entry.component.html",
+          "lineNumber": 66,
+          "context": [
+            "button",
+            "close"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-attribute=attribute": {
+      "count": 7,
+      "identical_context": false,
+      "occurrences": [
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 31,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 76,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 87,
+          "context": [
+            "input"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 204,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 217,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 246,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 248,
+          "context": [
+            "input"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-itemName=item.name": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 65,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 79,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-serviceName=service.serviceName": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 151,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 266,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-entityName=aeName": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 203,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-attribute",
+          "filePath": "src/app/entity-attribute/entity-attribute.component.html",
+          "lineNumber": 245,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-name=Name": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 6,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 15,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-element=element": {
+      "count": 8,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 7,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 16,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 67,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 73,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 84,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 88,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 97,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 109,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-descriptionHeader=Description": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 24,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 60,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-location=location": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 28,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "rfidbookings",
+          "filePath": "src/app/rfidbookings/rfid-bookings.component.html",
+          "lineNumber": 64,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-dateCreated=dateCreated": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 71,
+          "context": [
+            "create"
+          ],
+          "priority": 9
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 77,
+          "context": [
+            "create"
+          ],
+          "priority": 9
+        }
+      ]
+    },
+    "attr.data-elementId=element.id": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 89,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 98,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-name=name": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 116,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "rfidbookings",
+          "filePath": "src/app/rfidbookings/rfid-bookings.component.html",
+          "lineNumber": 96,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-aeName=aeName": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "entity-list",
+          "filePath": "src/app/entity-list/entity-list.component.html",
+          "lineNumber": 121,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "rfidbookings",
+          "filePath": "src/app/rfidbookings/rfid-bookings.component.html",
+          "lineNumber": 81,
+          "context": [
+            "container"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-startingFrom=startingFrom": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "equipment-calendar",
+          "filePath": "src/app/equipment-calendar/equipment-calendar.component.html",
+          "lineNumber": 142,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "equipment-calendar",
+          "filePath": "src/app/equipment-calendar/equipment-calendar.component.html",
+          "lineNumber": 144,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-noOfMOnths=noOfMOnths": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "equipment-calendar",
+          "filePath": "src/app/equipment-calendar/equipment-calendar.component.html",
+          "lineNumber": 157,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "equipment-calendar",
+          "filePath": "src/app/equipment-calendar/equipment-calendar.component.html",
+          "lineNumber": 159,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-filterId=statusId": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "equipment-calendar",
+          "filePath": "src/app/equipment-calendar/equipment-calendar.component.html",
+          "lineNumber": 209,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "equipment-calendar",
+          "filePath": "src/app/equipment-calendar/equipment-calendar.component.html",
+          "lineNumber": 220,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-isNotPartsEquipmentsOrSequences=node.name": {
+      "count": 4,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 15,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 20,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 121,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 127,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-nodeMax=node.max": {
+      "count": 4,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 20,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 28,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 127,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 135,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-nodeMin=node.min": {
+      "count": 4,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 21,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 29,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 128,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 136,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-isPartsEquipmentsOrSequences=node.name": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 28,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 135,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-showDeleteButton=showDeleteButton": {
+      "count": 3,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 39,
+          "context": [
+            "show",
+            "delete"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 50,
+          "context": [
+            "show",
+            "delete"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 147,
+          "context": [
+            "show",
+            "delete"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "attr.data-editNode=node.name": {
+      "count": 4,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 42,
+          "context": [
+            "edit"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 54,
+          "context": [
+            "edit"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 150,
+          "context": [
+            "edit"
+          ],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 171,
+          "context": [
+            "edit"
+          ],
+          "priority": 5
+        }
+      ]
+    },
+    "data-deleteIcon=deleteIcon": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 71,
+          "context": [
+            "icon",
+            "delete"
+          ],
+          "priority": 8
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 184,
+          "context": [
+            "icon",
+            "delete"
+          ],
+          "priority": 8
+        }
+      ]
+    },
+    "data-cy=ReplaceBtn": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 87,
+          "context": [],
+          "priority": 10
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 191,
+          "context": [],
+          "priority": 10
+        }
+      ]
+    },
+    "attr.data-exchangeNodeBtn=node.name": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 95,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 198,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    },
+    "data-exchangeIcon=exchangeIcon": {
+      "count": 2,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 98,
+          "context": [
+            "icon",
+            "primary-action"
+          ],
+          "priority": 7
+        },
+        {
+          "module": "nested-tree",
+          "filePath": "src/app/nested-tree/nested-tree.component.html",
+          "lineNumber": 201,
+          "context": [
+            "icon",
+            "primary-action"
+          ],
+          "priority": 7
+        }
+      ]
+    },
+    "attr.data-labelValue=labelValue": {
+      "count": 3,
+      "identical_context": true,
+      "occurrences": [
+        {
+          "module": "search-bar",
+          "filePath": "src/app/search-bar/search-bar.component.html",
+          "lineNumber": 4,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "search-bar",
+          "filePath": "src/app/search-bar/search-bar.component.html",
+          "lineNumber": 6,
+          "context": [],
+          "priority": 5
+        },
+        {
+          "module": "search-bar",
+          "filePath": "src/app/search-bar/search-bar.component.html",
+          "lineNumber": 30,
+          "context": [],
+          "priority": 5
+        }
+      ]
+    }
+  }
+}

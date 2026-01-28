@@ -1,0 +1,115 @@
+# PLCD Testing Assistant - Python Dependencies
+# Version: 2.0
+# Date: 2025-11-17
+
+# ============================================================================
+# CORE FRAMEWORK
+# ============================================================================
+
+# LangChain & LangGraph - Agent orchestration
+langchain>=0.1.0
+langgraph>=0.0.40
+langchain-openai>=0.0.5
+langchain-core>=0.1.0
+langchain-community>=0.0.10
+
+# ============================================================================
+# AI & VECTOR DATABASE
+# ============================================================================
+
+# Azure OpenAI - LLM and embeddings
+openai>=1.12.0
+
+# ChromaDB - Vector database for semantic search
+chromadb>=0.4.22
+
+# ============================================================================
+# BROWSER AUTOMATION
+# ============================================================================
+
+# Playwright - Browser automation
+playwright>=1.40.0
+
+# ============================================================================
+# DATA PROCESSING
+# ============================================================================
+
+# Configuration management
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# JSON & data manipulation
+jsonschema>=4.20.0
+
+# ============================================================================
+# UTILITIES
+# ============================================================================
+
+# Template engine for report/script generation
+jinja2>=3.1.2
+
+# HTTP requests (for API calls)
+requests>=2.31.0
+
+# Type hints
+typing-extensions>=4.9.0
+
+# File path handling
+pathlib>=1.0.1
+
+# ============================================================================
+# LOGGING & MONITORING
+# ============================================================================
+
+# Logging utilities
+colorlog>=6.8.0
+loguru>=0.7.2
+
+# ============================================================================
+# TESTING
+# ============================================================================
+
+# Testing frameworks
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-playwright>=0.4.0
+
+# ============================================================================
+# SECURITY
+# ============================================================================
+
+# Password hashing
+bcrypt>=4.1.0
+
+# ============================================================================
+# DATABASE
+# ============================================================================
+
+# SQLite is built-in, but these help with management
+sqlalchemy>=2.0.0
+
+# ============================================================================
+# OPTIONAL - FOR DEVELOPMENT
+# ============================================================================
+
+# Code quality
+black>=23.12.0
+flake8>=7.0.0
+mypy>=1.8.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.5.0
+
+# ============================================================================
+# INSTALLATION INSTRUCTIONS
+# ============================================================================
+
+# To install all dependencies:
+#   pip install -r requirements.txt
+
+# To install Playwright browsers:
+#   playwright install chromium msedge
+
+# To verify installation:
+#   python -c "import langchain, chromadb, playwright; print('All packages installed successfully!')"

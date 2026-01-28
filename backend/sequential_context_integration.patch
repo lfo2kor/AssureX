@@ -1,0 +1,28 @@
+diff --git a/agents/vision_executor_agent.py b/agents/vision_executor_agent.py
+index 1234567..abcdefg 100644
+--- a/agents/vision_executor_agent.py
++++ b/agents/vision_executor_agent.py
+@@ -19,7 +19,7 @@ from pathlib import Path
+ from typing import Dict, List, Tuple, Optional
+
+ from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
+ from utils.vision_helper import AzureVisionClient
+-from utils.selector_loader import SelectorLoader
++from utils.selector_loader_v2 import SelectorLoaderV2
+ from utils.step_executor import StepExecutor
+ from models.state import TestAutomationState
+
+@@ -59,8 +59,11 @@ def vision_executor_agent(state: TestAutomationState) -> TestAutomationState:
+     # Initialize vision client
+     vision_client = AzureVisionClient(config, logger)
+
+-    # Initialize selector loader
+-    selector_loader = SelectorLoader()
++    # Initialize selector loader V2 with sequential context tracking
++    selector_loader = SelectorLoaderV2(use_sequential_context=True)
++
++    # Reset state for new test
++    selector_loader.reset_state()
+
+     # Get module context from Jira data
+     module = jira_data.get('module', '')

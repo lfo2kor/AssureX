@@ -1,0 +1,20 @@
+{
+  "ticket_id": "RBPLCD-8835",
+  "module": "Teststep",
+  "original_report": "Reports/RBPLCD-8835_20251118_115209_report.html",
+  "feedback_date": "2025-11-18T11:58:20.706674",
+  "corrections_count": 1,
+  "corrections": [
+    {
+      "step_number": 5,
+      "step_text": "click on edit button of parts default_testobject_01",
+      "old_selector": "[data-editicon=\"EditIcon\"]",
+      "correct_selector": "[data-editnode=\"default_testobject_01\"]",
+      "reason": "Instead of generic selector we are giving the specific selector for default_testobject_01",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "Runtime",
+      "original_confidence": 0.95
+    }
+  ]
+}

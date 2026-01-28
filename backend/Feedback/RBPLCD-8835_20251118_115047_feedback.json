@@ -1,0 +1,31 @@
+{
+  "ticket_id": "RBPLCD-8835",
+  "module": "Teststep",
+  "original_report": "Reports/RBPLCD-8835_20251118_114511_report.html",
+  "feedback_date": "2025-11-18T11:50:47.064994",
+  "corrections_count": 2,
+  "corrections": [
+    {
+      "step_number": 5,
+      "step_text": "click on edit button of parts default_testobject_01",
+      "old_selector": "[data-detailview='detailView']",
+      "correct_selector": "[data-editicon=\"EditIcon\"]",
+      "reason": "it is edit button icon selector needs to be selected. Last time it was selecting detail view selector that is wrong.",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "Runtime",
+      "original_confidence": 0.96
+    },
+    {
+      "step_number": 6,
+      "step_text": "Click on Type and select “Type 5” from drop down",
+      "old_selector": "data-attributegroupattribute=\"Type\"",
+      "correct_selector": "[data-attributegroupattribute=\"Type\"]",
+      "reason": "last time [] css was not included. [data-attributegroupattribute=\"Type\"] is for the click on Type",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "Runtime",
+      "original_confidence": 0.97
+    }
+  ]
+}

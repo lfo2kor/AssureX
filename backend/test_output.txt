@@ -1,0 +1,276 @@
+[INFO] Logger initialized for ticket RBPLCD-8835
+[INFO] Creating workflow...
+[INFO] Workflow created successfully
+[INFO] Starting workflow execution...
+[INFO] Loading configuration...
+[INFO] Configuration loaded successfully
+[INFO] ======================================================================
+[INFO] JIRA PARSER AGENT - Starting
+[INFO] ======================================================================
+[INFO] Parsing ticket: RBPLCD-8835
+[INFO] Successfully read ticket file (1260 characters)
+[INFO] Extracted 9 test steps
+[INFO] Successfully parsed ticket content
+[INFO] Jira Data Summary:
+[INFO]   - Ticket ID: RBPLCD-8835
+[INFO]   - Module: Teststep
+[INFO]   - Title: edit part details Created: 2025-09-16  Updated: 2025-09-24
+[INFO]   - Steps: 9
+[INFO]   - Acceptance Criteria: "Successfully edited: 'TestObject' default_testobj...
+[INFO] JIRA PARSER AGENT - Complete
+[INFO] ======================================================================
+[INFO] ======================================================================
+[INFO] VISION EXECUTOR AGENT - Starting
+[INFO] ======================================================================
+[INFO] Executing 9 test steps
+[INFO] Azure Vision Client initialized
+[INFO] Loaded 888 selectors from Selectors_Folder\selectors.json
+[INFO] Module context: Teststep
+[INFO] Initializing browser...
+[INFO] Launched edge browser
+[INFO] Navigating to: http://fe0vm03313.de.bosch.com/rbplcd_t/client/login
+[INFO] Browser initialized successfully
+[INFO] Performing auto-login...
+[INFO] Captured login page screenshot
+[INFO] Attempting login with standard selectors...
+[INFO] Standard selectors not found, will use CV-guided approach
+[INFO] Using CV to identify specific selectors...
+[INFO] Vision API call successful
+[INFO] CV identified selectors with confidence: 0.95
+[INFO] CV reasoning: The primary selectors are based on unique and specific attributes like 'placeholder' and button text, which are less likely to change and are highly reliable. The fallback selectors use 'name' attributes and button type, which are also specific but slightly less reliable than the primary ones. These selectors ensure both specificity and robustness for automation.
+[INFO] Primary selectors - Username: input[placeholder='Username'], password=***MASKED***'Password'], Button: button:has-text('Login')
+[INFO] Username filled using CV selector: input[placeholder='Username']
+[INFO] Password filled using CV selector: input[placeholder='Password']
+[INFO] Login button clicked using CV selector: button:has-text('Login')
+[INFO] Current URL after login: http://fe0vm03313.de.bosch.com/rbplcd_t/client/dashboard
+[INFO] Login successful - URL changed from login page
+[INFO] Login successful
+[INFO] Module mapping loaded: {'teststep': 'Runs', 'test': 'Tasks', 'structurelevel': 'Projects'}
+[INFO] Module mapping: 'Teststep' -> 'Runs'
+[INFO] Jira module 'Teststep' maps to web name 'Runs'
+[INFO] Skipping Step 1 (Login) - already completed in auto_login()
+[INFO] 
+======================================================================
+[INFO] Executing Step 2: navigate to teststep
+[INFO] ======================================================================
+[INFO] 
+Executing Step 2: navigate to teststep
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Found custom selector: [data-masterviewteststeps="masterViewTestSteps"]
+[INFO] Selector count: 0
+[INFO] Selector not found on page
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Navigation detected - looking for 'Runs' in web app
+[INFO] Trying pattern: button:has-text('Runs') -> Count: 0
+[INFO] Trying pattern: a:has-text('Runs') -> Count: 0
+[INFO] Trying pattern: [role='link']:has-text('Runs') -> Count: 1
+[INFO] Clicked (default): [role='link']:has-text('Runs')
+[INFO] \u2705 Level 2 succeeded with selector: [role='link']:has-text('Runs')
+[INFO] Step 2 status: PASSED
+[INFO] Selector used: [role='link']:has-text('Runs')
+[INFO] Level used: Level 2 (Generic)
+[INFO] 
+======================================================================
+[INFO] Executing Step 3: click on drop down next to Items per page and set it to 100
+[INFO] ======================================================================
+[INFO] 
+Executing Step 3: click on drop down next to Items per page and set it to 100
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Trying pattern: button:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: a:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: [role='link']:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: [role='button']:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: button[type='submit'] -> Count: 0
+[INFO] Trying pattern: input[type='submit'] -> Count: 0
+[INFO] Trying pattern: button -> Count: 42
+[WARNING] Pattern button has 42 matches - ambiguous
+[INFO] LEVEL 3: Using CV-guided selector discovery...
+[INFO] Vision API call successful
+[INFO] CV selector strategy: select:below(:text('Items per page:'))
+[INFO] CV reasoning: The dropdown is uniquely identifiable by its proximity to the label 'Items per page:'. Using a relative selector ensures robustness even if other dropdowns are added to the page.
+[INFO] CV primary selector count: 0
+[INFO] Trying fallback: select[aria-label='Items per page'] -> Count: 0
+[INFO] Trying fallback: select:has-text('20') -> Count: 0
+[WARNING] Step 3 failed
+[WARNING] Error: 
+[INFO] Step 3 status: FAILED
+[INFO] Selector used: 
+[INFO] Level used: 
+[INFO] 
+======================================================================
+[INFO] Executing Step 4: click on teststep named as default_Measurement01
+[INFO] ======================================================================
+[INFO] 
+Executing Step 4: click on teststep named as default_Measurement01
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Level 1: Extracted row identifier: default_Measurement01
+[INFO] Row scoping required - skipping Level 1, will use Level 2
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Extracted row identifier: default_Measurement01
+[INFO] Trying row selector: tr:has-text('default_Measurement01') -> Count: 1
+[INFO] Clicked: tr:has-text('default_Measurement01')
+[INFO] \u2705 Level 2 succeeded with selector: tr:has-text('default_Measurement01')
+[INFO] Step 4 status: PASSED
+[INFO] Selector used: tr:has-text('default_Measurement01')
+[INFO] Level used: Level 2 (Generic)
+[INFO] 
+======================================================================
+[INFO] Executing Step 5: open parts accordion
+[INFO] ======================================================================
+[INFO] 
+Executing Step 5: open parts accordion
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Found custom selector: [data-accordion="otherAttributes"]
+[INFO] Selector count: 0
+[INFO] Selector not found on page
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Trying pattern: [role='button'][aria-expanded='false'] -> Count: 8
+[WARNING] Pattern [role='button'][aria-expanded='false'] has 8 matches - ambiguous
+[INFO] Trying pattern: .mat-expansion-panel-header:has-text('Parts') -> Count: 1
+[INFO] Clicked: .mat-expansion-panel-header:has-text('Parts')
+[INFO] \u2705 Level 2 succeeded with selector: .mat-expansion-panel-header:has-text('Parts')
+[INFO] Step 5 status: PASSED
+[INFO] Selector used: .mat-expansion-panel-header:has-text('Parts')
+[INFO] Level used: Level 2 (Generic)
+[INFO] 
+======================================================================
+[INFO] Executing Step 6: click on edit button of part default_testobject_01
+[INFO] ======================================================================
+[INFO] 
+Executing Step 6: click on edit button of part default_testobject_01
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Level 1: Extracted row identifier from 'of part/testobject': default_testobject_01
+[INFO] Row scoping required - skipping Level 1, will use Level 2
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Extracted row identifier from 'of part/testobject': default_testobject_01
+[INFO] Trying scoped pattern: :text-is('default_testobject_01') >> xpath=.. >> [data-editicon] -> Count: 3
+[INFO] Clicked (force): :text-is('default_testobject_01') >> xpath=.. >> [data-editicon]
+[INFO] \u2705 Level 2 succeeded with selector: :text-is('default_testobject_01') >> xpath=.. >> [data-editicon]
+[INFO] Step 6 status: PASSED
+[INFO] Selector used: :text-is('default_testobject_01') >> xpath=.. >> [data-editicon]
+[INFO] Level used: Level 2 (Generic)
+[INFO] 
+======================================================================
+[INFO] Executing Step 7: Click on Type and select “Type 5” from drop down
+[INFO] ======================================================================
+[INFO] 
+Executing Step 7: Click on Type and select “Type 5” from drop down
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Found custom selector: [data-addexisting="addExisting"]
+[INFO] Selector count: 0
+[INFO] Selector not found on page
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Trying pattern: button:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: a:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: [role='link']:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: [role='button']:has-text('{text}') -> Count: 0
+[INFO] Trying pattern: button[type='submit'] -> Count: 0
+[INFO] Trying pattern: input[type='submit'] -> Count: 0
+[INFO] Trying pattern: button -> Count: 76
+[WARNING] Pattern button has 76 matches - ambiguous
+[INFO] LEVEL 3: Using CV-guided selector discovery...
+[INFO] Vision API call successful
+[INFO] CV selector strategy: [data-addexisting='addExisting'] >> select
+[INFO] CV reasoning: The custom data attribute [data-addexisting='addExisting'] is available and specific. Scoping is required to ensure the action targets the correct row associated with 'default_testobject_01'. The fallback selectors provide additional options in case the primary selector fails.
+[INFO] CV primary selector count: 0
+[INFO] Trying fallback: tr:has-text('default_testobject_01') select:has-text('Type') -> Count: 0
+[INFO] Trying fallback: tr:has-text('default_testobject_01') select -> Count: 0
+[WARNING] Step 7 failed
+[WARNING] Error: 
+[INFO] Step 7 status: FAILED
+[INFO] Selector used: 
+[INFO] Level used: 
+[INFO] 
+======================================================================
+[INFO] Executing Step 8: click on save
+[INFO] ======================================================================
+[INFO] 
+Executing Step 8: click on save
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Found custom selector: [data-savebtn="AddBtn"]
+[INFO] Selector count: 0
+[INFO] Selector not found on page
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] Trying pattern: button:has-text('Save') -> Count: 1
+[INFO] Clicked: button:has-text('Save')
+[INFO] \u2705 Level 2 succeeded with selector: button:has-text('Save')
+[INFO] Step 8 status: PASSED
+[INFO] Selector used: button:has-text('Save')
+[INFO] Level used: Level 2 (Generic)
+[INFO] 
+======================================================================
+[INFO] Executing Step 9: "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+[INFO] ======================================================================
+[INFO] 
+Executing Step 9: "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+[INFO] LEVEL 1: Trying custom selectors from JSON...
+[INFO] Found custom selector: [data-savebtn="AddBtn"]
+[INFO] Selector count: 0
+[INFO] Selector not found on page
+[INFO] LEVEL 2: Trying generic HTML patterns...
+[INFO] LEVEL 3: Using CV-guided selector discovery...
+[INFO] Vision API call successful
+[INFO] CV selector strategy: tr:has-text('default_testobject_01') [data-savebtn='AddBtn']
+[INFO] CV reasoning: The action targets a specific row in a table, identified by the text 'default_testobject_01'. The provided custom data attribute [data-savebtn='AddBtn'] is specific and preferred. Scoping ensures the correct row is targeted.
+[INFO] CV primary selector count: 0
+[INFO] Trying fallback: tr:has-text('default_testobject_01') button:has-text('Save') -> Count: 0
+[INFO] Trying fallback: tr:has-text('default_testobject_01') .save-button -> Count: 0
+[WARNING] Step 9 failed
+[WARNING] Error: 
+[INFO] Step 9 status: FAILED
+[INFO] Selector used: 
+[INFO] Level used: 
+[INFO] 
+Total execution time: 58.00 seconds
+[INFO] Video recorded at: C:\Projects\AI_Chat\PLCD\TA_AI_Project\Videos\5f6db7e4a46074062ed6c70c2471ba72.webm
+[INFO] Video saved: C:\Projects\AI_Chat\PLCD\TA_AI_Project\Videos\5f6db7e4a46074062ed6c70c2471ba72.webm
+[INFO] Browser closed
+[INFO] ======================================================================
+[INFO] VISION EXECUTOR AGENT - Complete
+[INFO] Overall Status: FAILED
+[INFO] Steps Passed: 6/9
+[INFO] ======================================================================
+[INFO] ======================================================================
+[INFO] REPORT GENERATOR AGENT - Starting
+[INFO] ======================================================================
+[INFO] Generating HTML report...
+[WARNING] Template not found: templates\report_template.html, using built-in template
+[INFO] Report saved: C:\Projects\AI_Chat\PLCD\TA_AI_Project\Reports\RBPLCD-8835_report_20251008_133904.html
+[INFO] HTML report generated: C:\Projects\AI_Chat\PLCD\TA_AI_Project\Reports\RBPLCD-8835_report_20251008_133904.html
+[INFO] Generating Playwright script...
+[INFO] Script saved: C:\Projects\AI_Chat\PLCD\TA_AI_Project\Generated_Scripts\RBPLCD-8835_script_20251008_133904.py
+[INFO] Playwright script generated: C:\Projects\AI_Chat\PLCD\TA_AI_Project\Generated_Scripts\RBPLCD-8835_script_20251008_133904.py
+[INFO] REPORT GENERATOR AGENT - Complete
+[INFO] ======================================================================
+================================================================================
+               Testing Login Button Fix
+                    Ticket: RBPLCD-8835
+================================================================================
+
+Starting test automation for ticket RBPLCD-8835...
+
+
+================================================================================
+                              TEST RESULTS
+================================================================================
+Traceback (most recent call last):
+  File "C:\Projects\AI_Chat\PLCD\TA_AI_Project\test_login_fix.py", line 69, in test_with_ticket
+    print(f"\n\u2713 Overall Status:  {overall_status}")
+  File "C:\Users\lfo2kor\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 2: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Projects\AI_Chat\PLCD\TA_AI_Project\test_login_fix.py", line 90, in <module>
+    exit_code = test_with_ticket(ticket)
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\AI_Chat\PLCD\TA_AI_Project\test_login_fix.py", line 78, in test_with_ticket
+    print(f"\n\n\u274c Error: {e}")
+  File "C:\Users\lfo2kor\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 4: character maps to <undefined>

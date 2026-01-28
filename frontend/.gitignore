@@ -1,0 +1,144 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# ============================================
+# PYTHON SPECIFIC (ADDED FOR BACKEND)
+# ============================================
+
+# Environment variables - NEVER COMMIT!
+
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.so
+.Python
+
+# Virtual Environment - NEVER COMMIT!
+venv/
+my-fastapi-project/venv/
+**venv/
+env/
+ENV/
+
+venv/
+env/
+ENV/
+.venv/
+my-fastapi-project/venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+Logs/
+my-fastapi-project/Logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ChromaDB
+chromadb_data/
+my-fastapi-project/chromadb_data/
+
+# Generated files
+Generated_Scripts/
+my-fastapi-project/Generated_Scripts/
+
+# Data files
+data/
+my-fastapi-project/data/
+
+# JSON runtime files
+*_runtime_fixed.json
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ============================================
+# ANGULAR/NODE.JS (ORIGINAL)
+# ============================================
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# ============================================
+# IDEs AND EDITORS
+# ============================================
+
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# ============================================
+# MISCELLANEOUS
+# ============================================
+
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# Python
+venv/
+.env/
+__pycache__/
+*.pyc
+
+# System files
+.DS_Store
+Thumbs.db

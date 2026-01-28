@@ -1,0 +1,214 @@
+[
+  {
+    "attr": "data-createnew",
+    "value": "createNew",
+    "module": "create-new",
+    "context": [
+      "container",
+      "create",
+      "wrapper"
+    ],
+    "priority": 8,
+    "usage_scenario": "Container wrapper for create buttons",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "{{buttonName | translate}}",
+    "lineNumber": 2,
+    "elementType": "ng-container"
+  },
+  {
+    "attr": "attr.data-routetodetailviewdialog",
+    "value": "buttonName",
+    "module": "create-new",
+    "context": [
+      "button",
+      "create",
+      "detail-view",
+      "primary-action"
+    ],
+    "priority": 9,
+    "usage_scenario": "Create button in detail view (dynamic button name)",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": true,
+    "label": "{{buttonName | translate}}",
+    "lineNumber": 5,
+    "elementType": "button",
+    "condition": "_detailViewCondition && isCreateTestOrStepInDetails"
+  },
+  {
+    "attr": "data-routetodetailviewdialogaddicon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "create",
+      "detail-view",
+      "add"
+    ],
+    "priority": 7,
+    "usage_scenario": "Add icon on detail view create button",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 7,
+    "elementType": "mat-icon"
+  },
+  {
+    "attr": "attr.data-opencreatedialog",
+    "value": "buttonName",
+    "module": "create-new",
+    "context": [
+      "button",
+      "create",
+      "dialog",
+      "primary-action"
+    ],
+    "priority": 10,
+    "usage_scenario": "Primary create button that opens dialog (dynamic button name)",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": true,
+    "label": "{{buttonName | translate}}",
+    "lineNumber": 11,
+    "elementType": "button",
+    "condition": "\\!_detailViewCondition && isCreateBtnEnable"
+  },
+  {
+    "attr": "data-opencreatedialogaddicon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "create",
+      "dialog",
+      "add"
+    ],
+    "priority": 7,
+    "usage_scenario": "Add icon on create dialog button",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 14,
+    "elementType": "mat-icon"
+  },
+  {
+    "attr": "data-showmoreverticalbtn",
+    "value": "ShowMoreVerticalBtn",
+    "module": "create-new",
+    "context": [
+      "button",
+      "dropdown",
+      "menu-trigger",
+      "more-options"
+    ],
+    "priority": 10,
+    "usage_scenario": "Dropdown menu trigger button (three dots / ... +)",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 20,
+    "elementType": "button",
+    "specialNote": "This is the ... + button for RBPLCD-8862"
+  },
+  {
+    "attr": "data-showmorevertical",
+    "value": "showMoreVerticalIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "dropdown",
+      "more-vertical",
+      "ellipsis"
+    ],
+    "priority": 8,
+    "usage_scenario": "Three dots icon on dropdown menu button",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 22,
+    "elementType": "mat-icon"
+  },
+  {
+    "attr": "data-showmoreverticalbtnaddicon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "dropdown",
+      "add",
+      "menu"
+    ],
+    "priority": 7,
+    "usage_scenario": "Plus icon on dropdown menu button",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 23,
+    "elementType": "mat-icon"
+  },
+  {
+    "attr": "attr.data-opencreatedialogdropdown",
+    "value": "button",
+    "module": "create-new",
+    "context": [
+      "menu-item",
+      "dropdown",
+      "create",
+      "option"
+    ],
+    "priority": 9,
+    "usage_scenario": "Menu items inside dropdown (Project, Task, etc.)",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": true,
+    "label": "{{button | translate}}",
+    "lineNumber": 28,
+    "elementType": "button",
+    "insideMenu": true
+  },
+  {
+    "attr": "data-opencreatedialogbtnaddicon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "menu-item",
+      "add",
+      "dropdown"
+    ],
+    "priority": 7,
+    "usage_scenario": "Add icon on dropdown menu items",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "{{button | translate}}",
+    "lineNumber": 28,
+    "elementType": "button"
+  },
+  {
+    "attr": "data-create-ae-name-btn",
+    "value": "CreateAEButton",
+    "module": "create-new",
+    "context": [
+      "button",
+      "create",
+      "application-element",
+      "ae"
+    ],
+    "priority": 10,
+    "usage_scenario": "Create Application Element button",
+    "parentComponent": "create-new",
+    "filePath": "src\u0007pp\\create-new\\create-new.component.html",
+    "dynamic": false,
+    "label": "ui.createAeDialog.createElementTitle",
+    "lineNumber": 37,
+    "elementType": "button"
+  }
+]

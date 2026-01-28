@@ -1,0 +1,40 @@
+[RBPLCD-8835] edit part details Created: 2025-09-16  Updated: 2025-09-24 
+Status:	Open
+Project:	RB-PLCD
+Component/s:	Teststep 
+Affects Version/s:	None 
+Fix Version/s:	None 
+
+Type: 	Bug/Problem 	Priority: 	Medium 
+Reporter: 	Srivastava Vanshika (BD/TOA-ETS1) 
+Assignee: 	Unassigned 
+Resolution: 	Unresolved 	Votes: 	0 
+Labels: 	None 
+Remaining Estimate:	Not Specified 
+Time Spent:	Not Specified 
+Original Estimate:	Not Specified 
+Environment: 	http://fe0vm03313.de.bosch.com/rbplcd_t/client/login
+
+
+
+
+ Description  	 
+Problem Description:
+editing details for parts from teststep is not working
+Steps to Reproduce:
+1. Login
+2. navigate to teststep
+3. click on teststep named as default_Measurement01
+4. open parts accordion
+5. click on edit button of part default_testobject_01 
+6. Click on Type from mandatory field and select “Type 5” from drop down
+7. click on save
+8. "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+
+
+
+Acceptance Criteria:
+"Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+ 
+
+Generated at Wed Sep 24 09:02:01 CEST 2025 by Bathla Raashi (BD/TOA-ETS1) using Jira 9.12.25#9120025-sha1:62b4d85e419ed49eeb00f21ebe7ccc8e230003f0. 

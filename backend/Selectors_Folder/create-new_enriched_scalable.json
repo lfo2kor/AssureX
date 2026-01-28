@@ -1,0 +1,243 @@
+[
+  {
+    "attr": "data-createNew",
+    "value": "createNew",
+    "module": "create-new",
+    "context": [
+      "container",
+      "create"
+    ],
+    "priority": 8,
+    "usage_scenario": "Container create",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 2,
+    "elementType": "ng-container",
+    "condition": null
+  },
+  {
+    "attr": "attr.data-routeToDetailViewDialog",
+    "value": "buttonName",
+    "module": "create-new",
+    "context": [
+      "primary-action",
+      "dialog"
+    ],
+    "priority": 9,
+    "usage_scenario": "opens dialog",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": true,
+    "label": "",
+    "lineNumber": 5,
+    "elementType": "unknown",
+    "condition": null
+  },
+  {
+    "attr": "data-routeToDetailViewDialogAddIcon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "dialog",
+      "add"
+    ],
+    "priority": 8,
+    "usage_scenario": "Icon opens dialog",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 7,
+    "elementType": "mat-icon",
+    "condition": null
+  },
+  {
+    "attr": "attr.data-openCreateDialog",
+    "value": "buttonName",
+    "module": "create-new",
+    "context": [
+      "button",
+      "dialog",
+      "clickable",
+      "create"
+    ],
+    "priority": 9,
+    "usage_scenario": "Button create opens dialog",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": true,
+    "label": "",
+    "lineNumber": 11,
+    "elementType": "button",
+    "condition": null
+  },
+  {
+    "attr": "data-openCreateDialogAddIcon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "dialog",
+      "create",
+      "add"
+    ],
+    "priority": 8,
+    "usage_scenario": "Icon create opens dialog",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 14,
+    "elementType": "mat-icon",
+    "condition": null
+  },
+  {
+    "attr": "data-ShowMoreVerticalBtn",
+    "value": "ShowMoreVerticalBtn",
+    "module": "create-new",
+    "context": [
+      "button",
+      "menu-trigger",
+      "dropdown",
+      "primary-action",
+      "show",
+      "more-options",
+      "more-vertical"
+    ],
+    "priority": 10,
+    "usage_scenario": "Primary Dropdown menu trigger",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 20,
+    "elementType": "button",
+    "condition": null
+  },
+  {
+    "attr": "data-showMoreVertical",
+    "value": "showMoreVerticalIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "show",
+      "more-options",
+      "more-vertical"
+    ],
+    "priority": 7,
+    "usage_scenario": "Icon",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 22,
+    "elementType": "mat-icon",
+    "condition": null
+  },
+  {
+    "attr": "data-showMoreVerticalBtnAddIcon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "show",
+      "more-options",
+      "more-vertical",
+      "add"
+    ],
+    "priority": 8,
+    "usage_scenario": "Icon",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 23,
+    "elementType": "mat-icon",
+    "condition": null
+  },
+  {
+    "attr": "data-openCreateDialogBtnAddIcon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "menu-item",
+      "dropdown",
+      "dialog",
+      "create",
+      "add"
+    ],
+    "priority": 9,
+    "usage_scenario": "create opens dialog in dropdown menu",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 28,
+    "elementType": "unknown",
+    "condition": null
+  },
+  {
+    "attr": "attr.data-openCreateDialogDropDown",
+    "value": "button",
+    "module": "create-new",
+    "context": [
+      "menu-item",
+      "dropdown",
+      "dialog",
+      "create"
+    ],
+    "priority": 9,
+    "usage_scenario": "create opens dialog in dropdown menu",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": true,
+    "label": "",
+    "lineNumber": 28,
+    "elementType": "unknown",
+    "condition": null
+  },
+  {
+    "attr": "data-create-Ae-Name-btn",
+    "value": "CreateAEButton",
+    "module": "create-new",
+    "context": [
+      "button",
+      "primary-action",
+      "dialog",
+      "clickable",
+      "create"
+    ],
+    "priority": 9,
+    "usage_scenario": "Primary Button create opens dialog",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 37,
+    "elementType": "button",
+    "condition": null
+  },
+  {
+    "attr": "data-openCreateDialogAddIcon",
+    "value": "addIcon",
+    "module": "create-new",
+    "context": [
+      "icon",
+      "dialog",
+      "create",
+      "add"
+    ],
+    "priority": 8,
+    "usage_scenario": "Icon create opens dialog",
+    "parentComponent": "create-new",
+    "filePath": "src/app/create-new/create-new.component.html",
+    "dynamic": false,
+    "label": "",
+    "lineNumber": 38,
+    "elementType": "mat-icon",
+    "condition": null
+  }
+]

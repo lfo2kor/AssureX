@@ -1,0 +1,20 @@
+{
+  "ticket_id": "RBPLCD-8835",
+  "module": "Teststep",
+  "original_report": "Reports/RBPLCD-8835_20251118_114213_report.html",
+  "feedback_date": "2025-11-18T11:43:52.399541",
+  "corrections_count": 1,
+  "corrections": [
+    {
+      "step_number": 4,
+      "step_text": "open parts accordion",
+      "old_selector": "data-expensionpanelheader=\"aeName.UnitUnderTest.names\"",
+      "correct_selector": "[data-expensionpanelheader=\"aeName.UnitUnderTest.names\"]",
+      "reason": "given the correct data selector with [] css format.",
+      "module": "Teststep",
+      "ticket_id": "RBPLCD-8835",
+      "original_agent": "Runtime",
+      "original_confidence": 0.87
+    }
+  ]
+}

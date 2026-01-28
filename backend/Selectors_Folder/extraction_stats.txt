@@ -1,0 +1,171 @@
+================================================================================
+BATCH EXTRACTION STATISTICS
+================================================================================
+
+Total modules found: 31
+Successfully processed: 31
+Failed: 0
+Total selectors extracted: 400
+
+================================================================================
+MODULE DETAILS
+================================================================================
+
+Module: add-existing
+  Status: success
+  Selectors: 8
+
+Module: all-query
+  Status: success
+  Selectors: 19
+
+Module: attribute-group
+  Status: success
+  Selectors: 4
+
+Module: attribute-groups
+  Status: success
+  Selectors: 4
+
+Module: bread-crumbs
+  Status: success
+  Selectors: 3
+
+Module: bulk-operation
+  Status: success
+  Selectors: 13
+
+Module: calibrations
+  Status: success
+  Selectors: 0
+
+Module: command-bar-with-table
+  Status: success
+  Selectors: 2
+
+Module: create-new
+  Status: success
+  Selectors: 12
+
+Module: custom-messages
+  Status: success
+  Selectors: 1
+
+Module: dashboard
+  Status: success
+  Selectors: 0
+
+Module: detail-view
+  Status: success
+  Selectors: 39
+
+Module: entity-attribute
+  Status: success
+  Selectors: 43
+
+Module: entity-list
+  Status: success
+  Selectors: 72
+
+Module: equipment
+  Status: success
+  Selectors: 0
+
+Module: equipment-calendar
+  Status: success
+  Selectors: 58
+
+Module: feedback
+  Status: success
+  Selectors: 1
+
+Module: nested-tree
+  Status: success
+  Selectors: 46
+
+Module: parts
+  Status: success
+  Selectors: 0
+
+Module: projects
+  Status: success
+  Selectors: 0
+
+Module: result-entry
+  Status: success
+  Selectors: 9
+
+Module: rfidbookings
+  Status: success
+  Selectors: 26
+
+Module: search-bar
+  Status: success
+  Selectors: 10
+
+Module: sequences
+  Status: success
+  Selectors: 0
+
+Module: shared
+  Status: success
+  Selectors: 0
+
+Module: shared-services
+  Status: success
+  Selectors: 0
+
+Module: status-edit
+  Status: success
+  Selectors: 7
+
+Module: status-icon
+  Status: success
+  Selectors: 2
+
+Module: tests
+  Status: success
+  Selectors: 0
+
+Module: teststeps
+  Status: success
+  Selectors: 0
+
+Module: visual-investigation
+  Status: success
+  Selectors: 21
+
+================================================================================
+PRIORITY DISTRIBUTION
+================================================================================
+
+Priority 10: 15 selectors (3.8%)
+Priority 9: 17 selectors (4.2%)
+Priority 8: 40 selectors (10.0%)
+Priority 7: 15 selectors (3.8%)
+Priority 5: 313 selectors (78.2%)
+
+================================================================================
+TOP 20 CONTEXT KEYWORDS
+================================================================================
+
+icon: 28 (7.0%)
+container: 28 (7.0%)
+div: 24 (6.0%)
+edit: 19 (4.8%)
+button: 17 (4.2%)
+add: 15 (3.8%)
+create: 15 (3.8%)
+delete: 14 (3.5%)
+primary-action: 14 (3.5%)
+accordion: 13 (3.2%)
+close: 10 (2.5%)
+dialog: 10 (2.5%)
+dropdown: 9 (2.2%)
+save: 6 (1.5%)
+show: 6 (1.5%)
+clickable: 5 (1.2%)
+input: 5 (1.2%)
+more-options: 3 (0.8%)
+more-vertical: 3 (0.8%)
+menu-item: 3 (0.8%)

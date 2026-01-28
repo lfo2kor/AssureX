@@ -1,0 +1,36 @@
+===============================================================================
+RUNTIME EXTRACTION COMPLETE - RUN THESE 3 COMMANDS
+===============================================================================
+
+CURRENT STATUS:
+✅ Extracted 705 selectors from running app
+✅ Found 4 NEW selectors not in source code
+✅ L1 success: 40% (sequential context working)
+
+PROBLEM SOLVED:
+Source code HTML ≠ Running application DOM
+Solution: Extract from LIVE app (done!)
+
+===============================================================================
+NEXT: RUN THESE 3 COMMANDS
+===============================================================================
+
+1. MERGE SELECTORS (2 min):
+   python merge_selectors.py
+
+2. UPDATE CONFIG (edit line 64 in agents/vision_executor_agent.py):
+   FROM: selectors_file="Selectors_Folder/selectors_enriched_all_modules.json"
+   TO:   selectors_file="Selectors_Folder/selectors_merged_runtime.json"
+
+3. TEST:
+   python run_test.py RBPLCD-8835
+
+EXPECTED RESULT: L1 success jumps to 70-85%
+
+===============================================================================
+FILES TO READ:
+- SESSION_SUMMARY_RUNTIME_EXTRACTION.md (full details)
+- NEXT_STEPS_QUICK_REF.md (quick guide)
+
+DONE! ✅
+===============================================================================

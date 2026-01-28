@@ -1,0 +1,113 @@
+<div class="register-container">
+  <h1>Register Product</h1>
+  
+  <div class="register-card">
+    <!-- Project Selection -->
+    <div class="section">
+      <h2>Select Project</h2>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Select Project</mat-label>
+        <mat-select [(ngModel)]="selectedProject" (selectionChange)="onProjectChange()">
+          <mat-option *ngFor="let project of projects" [value]="project.id">
+            {{ project.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Testers Management -->
+    <div class="section" *ngIf="selectedProject">
+      <h2>Register Testers</h2>
+      
+      <div class="add-tester-section">
+        <mat-form-field appearance="outline" class="tester-select">
+          <mat-label>Add Tester</mat-label>
+          <mat-select [(ngModel)]="selectedTesterToAdd">
+            <mat-option *ngFor="let tester of getAvailableTestersToAdd()" [value]="tester.id">
+              {{ tester.name }} ({{ tester.email }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <button mat-raised-button color="primary" (click)="addTester()" [disabled]="!selectedTesterToAdd">
+          <mat-icon>add</mat-icon>
+          Add Tester
+        </button>
+      </div>
+
+      <div class="assigned-testers" *ngIf="assignedTesters.length > 0">
+        <h3>Assigned Testers</h3>
+        <div class="tester-list">
+          <div class="tester-item" *ngFor="let tester of assignedTesters">
+            <div class="tester-info">
+              <mat-icon>person</mat-icon>
+              <div>
+                <strong>{{ tester.name }}</strong>
+                <span>{{ tester.email }}</span>
+              </div>
+            </div>
+            <button mat-icon-button color="warn" (click)="removeTester(tester.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Upload -->
+    <div class="section" *ngIf="selectedProject">
+      <h2>Upload Files</h2>
+      
+      <div class="upload-section">
+        <div class="upload-item">
+          <label class="upload-label">
+            Config File (.yaml)
+            <input type="file" accept=".yaml,.yml" (change)="onFileSelected($event, 'config')" hidden #configInput>
+            <button mat-stroked-button (click)="configInput.click()">
+              <mat-icon>upload_file</mat-icon>
+              Choose File
+            </button>
+          </label>
+        </div>
+
+        <div class="upload-item">
+          <label class="upload-label">
+            Test Cases (ZIP)
+            <input type="file" accept=".zip" (change)="onFileSelected($event, 'zip')" hidden #zipInput>
+            <button mat-stroked-button (click)="zipInput.click()">
+              <mat-icon>upload_file</mat-icon>
+              Choose File
+            </button>
+          </label>
+        </div>
+      </div>
+
+      <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
+        <h3>Uploaded Files</h3>
+        <div class="file-list">
+          <div class="file-item" *ngFor="let file of uploadedFiles">
+            <div class="file-info">
+              <mat-icon>description</mat-icon>
+              <div>
+                <strong>{{ file.name }}</strong>
+                <span>{{ formatFileSize(file.size) }} • {{ file.type }}</span>
+              </div>
+            </div>
+            <button mat-icon-button color="warn" (click)="removeFile(file.name)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="actions" *ngIf="selectedProject">
+      <button mat-raised-button color="primary" class="save-btn" (click)="saveRegistration()" 
+              [disabled]="assignedTesters.length === 0 || uploadedFiles.length === 0">
+        <mat-icon>save</mat-icon>
+        Save Registration
+      </button>
+    </div>
+  </div>
+</div>
