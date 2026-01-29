@@ -150,29 +150,69 @@ def parse_ticket_content(content: str, logger: logging.Logger) -> Dict:
             jira_data['module'] = line.split(':', 1)[1].strip()
             logger.debug(f"Extracted module: {jira_data['module']}")
             break
-
-    # Extract steps from "Steps to Reproduce:" section
+ # Extract steps: accept "Steps:", "Steps to Reproduce:" or find first numbered list
     steps_section_found = False
     step_lines = []
 
     for i, line in enumerate(lines):
-        if 'Steps to Reproduce:' in line:
-            steps_section_found = True
-            logger.debug("Found 'Steps to Reproduce' section")
-            continue
+        if re.search(r'^\s*Steps(?:\s+to\s+Reproduce)?\s*[:\-]?\s*$', line, re.IGNORECASE) or re.search(r'^\s*Steps\s*[:\-]', line, re.IGNORECASE):
+           steps_section_found = True
+           logger.debug(f"Found steps header at line {i}: {line.strip()}")
+           continue
 
         if steps_section_found:
-            # Stop at "Acceptance Criteria:" or empty line followed by a header
+            # Stop at "Acceptance Criteria:" or next header line
             if 'Acceptance Criteria:' in line or (line.strip() == '' and i + 1 < len(lines) and lines[i + 1].strip().endswith(':')):
                 break
 
-            # Parse step lines (format: "1. Step text" or "1) Step text")
-            step_match = re.match(r'^(\d+)[\.\)]\s+(.+)$', line.strip())
-            if step_match:
-                step_num = int(step_match.group(1))
-                step_text = step_match.group(2).strip()
-                step_lines.append({'num': step_num, 'text': step_text})
-                logger.debug(f"Extracted step {step_num}: {step_text[:50]}...")
+            # Parse numbered lines or bullets
+            stripped = line.strip()
+            m = re.match(r'^(\d+)[\.\)]\s+(.+)$', stripped)
+            if m:
+                step_lines.append({'num': int(m.group(1)), 'text': m.group(2).strip()})
+                logger.debug(f"Extracted step {m.group(1)}: {m.group(2)[:50]}...")
+                continue
+            b = re.match(r'^[-\*\u2022]\s+(.+)$', stripped)
+            if b:
+                step_lines.append({'num': len(step_lines) + 1, 'text': b.group(1).strip()})
+                continue
+
+    # If no explicit header found, try to collect first numbered list anywhere
+    if not step_lines:
+        for i, line in enumerate(lines):
+            m = re.match(r'^\s*(\d+)[\.\)]\s+(.+)$', line)
+            if m:
+                for j in range(i, len(lines)):
+                    m2 = re.match(r'^\s*(\d+)[\.\)]\s+(.+)$', lines[j])
+                    if m2:
+                        step_lines.append({'num': int(m2.group(1)), 'text': m2.group(2).strip()})
+                    else:
+                        break
+                break
+# ...existing code...
+    # # Extract steps from "Steps to Reproduce:" section
+    # steps_section_found = False
+    # step_lines = []
+
+    # for i, line in enumerate(lines):
+    #     if 'Steps to Reproduce:' in line:
+    #         steps_section_found = True
+    #         logger.debug("Found 'Steps to Reproduce' section")
+    #         continue
+
+    #     if steps_section_found:
+    #         # Stop at "Acceptance Criteria:" or empty line followed by a header
+    #         if 'Acceptance Criteria:' in line or (line.strip() == '' and i + 1 < len(lines) and lines[i + 1].strip().endswith(':')):
+    #             break
+
+    #         # Parse step lines (format: "1. Step text" or "1) Step text")
+    #         step_match = re.match(r'^(\d+)[\.\)]\s+(.+)$', line.strip())
+    #         if step_match:
+    #             step_num = int(step_match.group(1))
+    #             step_text = step_match.group(2).strip()
+    #             step_lines.append({'num': step_num, 'text': step_text})
+    #             logger.debug(f"Extracted step {step_num}: {step_text[:50]}...")
+
 
     jira_data['steps'] = step_lines
     logger.info(f"Extracted {len(step_lines)} test steps")
@@ -202,11 +242,18 @@ def parse_ticket_content(content: str, logger: logging.Logger) -> Dict:
     # Build description from parsed data
     jira_data['description'] = f"{jira_data['title']} - {len(step_lines)} steps"
 
-    # Validate required fields
+# Validate required fields
     if not jira_data['ticket_id']:
         raise ValueError("Could not extract ticket ID from file")
 
     if not jira_data['steps']:
-        raise ValueError("Could not extract test steps from file")
+        logger.warning("Could not extract test steps from file; returning empty steps list")
+# ...existing code...
+    # # Validate required fields
+    # if not jira_data['ticket_id']:
+    #     raise ValueError("Could not extract ticket ID from file")
+
+    # if not jira_data['steps']:
+    #     raise ValueError("Could not extract test steps from file")
 
     return jira_data

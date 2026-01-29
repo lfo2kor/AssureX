@@ -17,7 +17,8 @@ import requests
 from config_loader import load_config, get_azure_client
 from report_generator import generate_html_report
 from script_generator import generate_playwright_script, generate_pytest_config, generate_readme
-from jira import JIRA
+# from jira import JIRA
+from agents.jira_parser_agent import parse_ticket_content  # add this to top imports
 # Setup logging with environment variable control
 import os
 
@@ -187,60 +188,85 @@ class JiraAgent(BaseAgent):
         self.jira_user = jira_cfg.get('username')
         self.jira_token = jira_cfg.get('api_token')
         self.jira_client = None
-        if self.jira_url and self.jira_user and self.jira_token:
-            # self.jira_client = JIRA(
-            #     server=self.jira_url,
-            #     basic_auth=(self.jira_user, self.jira_token)
-            # )
-            self.jira_client = JIRA(
-                  server=self.jira_url,
-                  token_auth=self.jira_token
-              )
-
-
+        # if self.jira_url and self.jira_user and self.jira_token:
+        #     # self.jira_client = JIRA(
+        #     #     server=self.jira_url,
+        #     #     basic_auth=(self.jira_user, self.jira_token)
+        #     # )
+        #     self.jira_client = JIRA(
+        #           server=self.jira_url,
+        #           token_auth=self.jira_token
+        #       )
+# ...existing code...
     def parse_ticket(self, ticket_id: str) -> Dict[str, Any]:
         """
-        Parse Jira ticket using LLM
+        Parse Jira ticket using LLM — LOCAL-FIRST fallback.
 
-        Args:
-            ticket_id: Jira ticket ID (e.g., "RBPLCD-8835")
-
-        Returns:
-            Parsed ticket data with steps
+        Prefers local file: <config.folders.jira>/<TICKET_ID>.txt or .md.
+        If not found and jira_client exists, will try Jira API.
         """
         logger.info(f"JiraAgent: Parsing ticket {ticket_id}")
 
-        # Read ticket file
-        # jira_folder = self.config['folders']['jira']
-        # ticket_path = Path(jira_folder) / f"{ticket_id}.txt"
+        ticket_content = ""
+        ticket_title = ""
 
-        # if not ticket_path.exists():
-        #     raise FileNotFoundError(f"Ticket file not found: {ticket_path}")
+        # FIRST: try local file
+        try:
+            jira_folder = self.config.get('folders', {}).get('jira', 'Jira_Tickets')
+            ticket_path_txt = Path(jira_folder) / f"{ticket_id}.txt"
+            ticket_path_md = Path(jira_folder) / f"{ticket_id}.md"
 
-        # with open(ticket_path, 'r', encoding='utf-8') as f:
-        #     ticket_content = f.read()
+            if ticket_path_txt.exists():
+                ticket_content = ticket_path_txt.read_text(encoding='utf-8')
+                ticket_title = ticket_title or ticket_id
+                logger.info(f"JiraAgent: Loaded ticket from local file {ticket_path_txt}")
+            elif ticket_path_md.exists():
+                ticket_content = ticket_path_md.read_text(encoding='utf-8')
+                ticket_title = ticket_title or ticket_id
+                logger.info(f"JiraAgent: Loaded ticket from local file {ticket_path_md}")
+            # Use deterministic local parser first (preferred)
+            if ticket_content:
+                try:
+                    local_parsed = parse_ticket_content(ticket_content, logger)
+                    steps = local_parsed.get('steps', [])
+                    if steps:
+                        logger.info(f"JiraAgent: Local parser extracted {len(steps)} steps — using them")
+                        # Normalize step shape expected by caller
+                        normalized = {
+                            'title': local_parsed.get('title', ticket_title),
+                            'module': local_parsed.get('module', ''),
+                            'steps': [
+                                {'description': s.get('text') or s.get('description') or s.get('step_text', '')}
+                                for s in steps
+                            ]
+                        }
+                        return normalized
+                    else:
+                        logger.info("JiraAgent: Local parser returned no steps, will fallback to LLM or Jira API")
+                except Exception as e:
+                    logger.warning(f"JiraAgent: Local parser failed ({e}), falling back to LLM/API")
+        except Exception as e:
+            logger.warning(f"JiraAgent: Local ticket file read failed: {e}")
 
-        # --- Fetch ticket from Jira API ---
-        if self.jira_client:
+        # SECOND: try Jira API only if no local file and client available
+        if not ticket_content and getattr(self, 'jira_client', None):
             try:
                 issue = self.jira_client.issue(ticket_id)
                 ticket_content = issue.fields.description or ""
                 ticket_title = issue.fields.summary or ""
-                
-                # DEBUG: Log raw ticket content
-                logger.debug("="*80)
-                logger.debug("RAW JIRA TICKET CONTENT:")
-                logger.debug("="*80)
-                logger.debug(ticket_content)
-                logger.debug("="*80)
-            
+                logger.debug("JiraAgent: Fetched ticket from Jira API")
             except Exception as e:
-                logger.error(f"JiraAgent: Failed to fetch ticket from Jira: {e}")
-                raise FileNotFoundError(f"Could not fetch ticket {ticket_id} from Jira: {e}")
-        else:
-            raise RuntimeError("Jira API client not configured. Please set 'jira.url', 'jira.username', and 'jira.api_token' in config.")
+                logger.error(f"JiraAgent: Failed to fetch ticket from Jira API: {e}")
 
-        # Build LLM prompt
+        # If still empty, raise actionable error
+        if not ticket_content:
+            raise RuntimeError(
+                f"Could not obtain ticket {ticket_id}. "
+                f"Place {ticket_id}.txt (or .md) in '{self.config.get('folders', {}).get('jira', 'Jira_Tickets')}' "
+                "or configure Jira API credentials."
+            )
+
+        # Build LLM prompt and parse (existing logic)
         user_prompt = f"""
 Ticket ID: {ticket_id}
 
@@ -252,20 +278,11 @@ Format Examples:
 
 Parse this ticket and extract test steps in JSON format.
 """
-
-        # Call LLM
         response = self.call_llm(self.system_prompt, user_prompt)
 
-    # DEBUG: Log LLM response
-        logger.debug("="*80)
-        logger.debug("LLM PARSED RESPONSE:")
-        logger.debug("="*80)
-        logger.debug(response)
-        logger.debug("="*80)
-        
-        # Parse JSON response
+        logger.debug("LLM PARSED RESPONSE:\n" + response)
+
         try:
-            # Extract JSON from markdown code blocks if present
             if "```json" in response:
                 json_str = response.split("```json")[1].split("```")[0].strip()
             elif "```" in response:
@@ -274,29 +291,118 @@ Parse this ticket and extract test steps in JSON format.
                 json_str = response.strip()
 
             parsed_data = json.loads(json_str)
-            
-            # 🔹 Build canonical step_results from Jira (SOURCE OF TRUTH)
-            parsed_data["step_results"] = [
-               {
-                  "step_number": i + 1,
-                  "step_text": step.get("description", "").strip(),
-                  "status": "PENDING",
-                  "agent_used": "L1",
-                  "confidence": 0.0
-                }
-                for i, step in enumerate(parsed_data.get("steps", []))
-            ]
-            # 🔒 Freeze canonical step text (never mutate later)
-            for step in parsed_data["step_results"]:
-                step["_original_text"] = step["step_text"]
+            parsed_data.setdefault('steps', [])
+            parsed_data['title'] = parsed_data.get('title', ticket_title)
+            parsed_data['module'] = parsed_data.get('module', '')
 
             logger.info(f"JiraAgent: Parsed {len(parsed_data.get('steps', []))} steps")
             return parsed_data
 
-        except json.JSONDecodeError as e:
-            logger.error(f"JiraAgent: Failed to parse LLM response as JSON: {e}")
-            logger.error(f"Response was: {response}")
+        except Exception as e:
+            logger.error(f"JiraAgent: Failed to parse LLM output: {e}")
+            logger.debug(f"LLM response was: {response}")
             raise
+# ...existing code...
+
+#     def parse_ticket(self, ticket_id: str) -> Dict[str, Any]:
+#         """
+#         Parse Jira ticket using LLM
+
+#         Args:
+#             ticket_id: Jira ticket ID (e.g., "RBPLCD-8835")
+
+#         Returns:
+#             Parsed ticket data with steps
+#         """
+#         logger.info(f"JiraAgent: Parsing ticket {ticket_id}")
+
+#         # Read ticket file
+#         # jira_folder = self.config['folders']['jira']
+#         # ticket_path = Path(jira_folder) / f"{ticket_id}.txt"
+
+#         # if not ticket_path.exists():
+#         #     raise FileNotFoundError(f"Ticket file not found: {ticket_path}")
+
+#         # with open(ticket_path, 'r', encoding='utf-8') as f:
+#         #     ticket_content = f.read()
+
+#         # --- Fetch ticket from Jira API ---
+#         if self.jira_client:
+#             try:
+#                 issue = self.jira_client.issue(ticket_id)
+#                 ticket_content = issue.fields.description or ""
+#                 ticket_title = issue.fields.summary or ""
+                
+#                 # DEBUG: Log raw ticket content
+#                 logger.debug("="*80)
+#                 logger.debug("RAW JIRA TICKET CONTENT:")
+#                 logger.debug("="*80)
+#                 logger.debug(ticket_content)
+#                 logger.debug("="*80)
+            
+#             except Exception as e:
+#                 logger.error(f"JiraAgent: Failed to fetch ticket from Jira: {e}")
+#                 raise FileNotFoundError(f"Could not fetch ticket {ticket_id} from Jira: {e}")
+#         else:
+#             raise RuntimeError("Jira API client not configured. Please set 'jira.url', 'jira.username', and 'jira.api_token' in config.")
+
+#         # Build LLM prompt
+#         user_prompt = f"""
+# Ticket ID: {ticket_id}
+
+# Ticket Content:
+# {ticket_content}
+
+# Format Examples:
+# {self.format_examples}
+
+# Parse this ticket and extract test steps in JSON format.
+# """
+
+#         # Call LLM
+#         response = self.call_llm(self.system_prompt, user_prompt)
+
+#     # DEBUG: Log LLM response
+#         logger.debug("="*80)
+#         logger.debug("LLM PARSED RESPONSE:")
+#         logger.debug("="*80)
+#         logger.debug(response)
+#         logger.debug("="*80)
+        
+#         # Parse JSON response
+#         try:
+#             # Extract JSON from markdown code blocks if present
+#             if "```json" in response:
+#                 json_str = response.split("```json")[1].split("```")[0].strip()
+#             elif "```" in response:
+#                 json_str = response.split("```")[1].split("```")[0].strip()
+#             else:
+#                 json_str = response.strip()
+
+#             parsed_data = json.loads(json_str)
+            
+#             # 🔹 Build canonical step_results from Jira (SOURCE OF TRUTH)
+#             parsed_data["step_results"] = [
+#                {
+#                   "step_number": i + 1,
+#                   "step_text": step.get("description", "").strip(),
+#                   "status": "PENDING",
+#                   "agent_used": "L1",
+#                   "confidence": 0.0
+#                 }
+#                 for i, step in enumerate(parsed_data.get("steps", []))
+#             ]
+#             # 🔒 Freeze canonical step text (never mutate later)
+#             for step in parsed_data["step_results"]:
+#                 step["_original_text"] = step["step_text"]
+
+#             logger.info(f"JiraAgent: Parsed {len(parsed_data.get('steps', []))} steps")
+#             return parsed_data
+
+#         except json.JSONDecodeError as e:
+#             logger.error(f"JiraAgent: Failed to parse LLM response as JSON: {e}")
+#             logger.error(f"Response was: {response}")
+#             raise
 
 
 
@@ -536,6 +642,14 @@ class LearningAgent(BaseAgent):
                     'timestamp': datetime.now().isoformat()
                 }]
             )
+             # Ensure data is flushed/persisted for immediate queries (no-op if not supported)
+            try:
+                if hasattr(self.chroma_client, "persist"):
+                    self.chroma_client.persist()
+                elif hasattr(self.learning_collection, "persist"):
+                    self.learning_collection.persist()
+            except Exception as e:
+                logger.debug(f"ChromaDB persist call failed (non-fatal): {e}")
 
             logger.debug(f"LearningAgent: Stored selector for '{step_text}'")
 
@@ -1549,16 +1663,16 @@ class PLCDTestingAssistantSeq:
         CRITICAL: This prevents database corruption and file locking issues.
         """
         try:
-            # Close ChromaDB client connections in agents
-            if hasattr(self, 'learning_agent') and hasattr(self.learning_agent, 'chroma_client'):
-                # ChromaDB doesn't have explicit close(), but clearing references helps GC
-                self.learning_agent.chroma_client = None
-                self.learning_agent.learning_collection = None
-                logger.debug("LearningAgent ChromaDB connection cleared")
+            # # Close ChromaDB client connections in agents
+            # if hasattr(self, 'learning_agent') and hasattr(self.learning_agent, 'chroma_client'):
+            #     # ChromaDB doesn't have explicit close(), but clearing references helps GC
+            #     self.learning_agent.chroma_client = None
+            #     self.learning_agent.learning_collection = None
+            #     logger.debug("LearningAgent ChromaDB connection cleared")
 
-            if hasattr(self, 'selector_agent_l1') and hasattr(self.selector_agent_l1, 'chroma_client'):
-                self.selector_agent_l1.chroma_client = None
-                logger.debug("SelectorAgent_L1 ChromaDB connection cleared")
+            # if hasattr(self, 'selector_agent_l1') and hasattr(self.selector_agent_l1, 'chroma_client'):
+            #     self.selector_agent_l1.chroma_client = None
+            #     logger.debug("SelectorAgent_L1 ChromaDB connection cleared")
 
             # Force garbage collection to release file handles
             import gc
@@ -1609,6 +1723,21 @@ class PLCDTestingAssistantSeq:
         print(f" [OK]")
         print(f"Ticket: {ticket_data.get('title', 'N/A')}")
         print(f"Module: {state['module']} | Steps: {state['total_steps']}")
+        
+         # Show detailed steps fetched from Jira
+        steps = ticket_data.get('steps', [])
+        if steps:
+            print("\nSteps fetched from Jira:")
+            for i, s in enumerate(steps, start=1):
+                # Support different ticket formats
+                step_text = s.get('text') or s.get('description') or s.get('step_text') or ''
+                print(f"  {i}. {step_text}")
+        else:
+            print("\n[INFO] No steps found in parsed ticket.")
+
+       # Debug log full steps payload
+        logger.debug(f"Parsed ticket steps payload: {json.dumps(steps, indent=2, ensure_ascii=False)}")
+
 
         return ticket_data
 
@@ -2536,6 +2665,20 @@ def collect_and_process_feedback(
                 )
                 print(f"✓ Saved insight for Step {step_num}: {step_feedback.get('feedback_type')}")
                 insights_saved += 1
+                 # --- NEW: Immediately add to runtime learned store so next run sees it ---
+                try:
+                    if hasattr(assistant, "learning_agent") and getattr(assistant.learning_agent, "learning_collection", None) is not None:
+                        assistant.learning_agent.store_learned_selector(
+                            step_text, 
+                            insight.get('selector', ''), 
+                            insight.get('context', {}), 
+                            insight.get('confidence', 0.95),
+                            source='manual_feedback',
+                            verified=True
+                        )
+                        logger.info(f"Indexed feedback insight into learning collection for step {step_num}")
+                except Exception as e:
+                    logger.warning(f"Failed to index feedback into learning collection: {e}")
             except Exception as e:
                 logger.error(f"Failed to save insight for step {step_num}: {e}")
                 print(f"✗ Failed to save insight for Step {step_num}")
@@ -2714,9 +2857,18 @@ def search_learned_insights(chroma_client, azure_client, config: Dict[str, Any],
         List of matching insights with selectors and confidence scores
     """
     try:
-        # Get collection
-        collection_name = config['vector_database']['collections']['learned_insights']
-        collection = chroma_client.get_collection(name=collection_name)
+        
+          # --- Robust collection name lookup (fallback to runtime_learned / learning_collection) ---
+        collections_cfg = config.get('vector_database', {}).get('collections', {}) or {}
+        collection_name = collections_cfg.get('learned_insights') \
+            or collections_cfg.get('runtime_learned') \
+            or 'learning_collection'
+        
+        # Use get_or_create to avoid errors when collection missing
+        collection = chroma_client.get_or_create_collection(name=collection_name)
+        # # Get collection
+        # collection_name = config['vector_database']['collections']['learned_insights']
+        # collection = chroma_client.get_collection(name=collection_name)
 
         # Get config values
         vector_search_config = config.get('vector_search', {})
