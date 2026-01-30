@@ -1,0 +1,57 @@
+base_folder: Projects
+project:
+  name: plcd_production
+testers:
+- username: mechanic_tester
+  password: Mechanic@2025
+- username: qa_lead
+  password: QALead@2025
+web_application:
+  url: http://fe0vm03313.de.bosch.com/rbplcd_t/client/login
+  browser: edge
+  environment: production
+  test_credentials:
+    username: mechanic
+    password: avalon
+wait_times:
+  after_login: 3000
+  after_navigation: 2000
+  after_click: 1000
+  after_type: 500
+  after_dropdown: 1000
+  page_load: 5000
+folders:
+  jira: Jira_Tickets
+  reports: Reports
+  videos: Videos
+  scripts: Generated_Scripts
+  logs: Logs
+  selectors: Selectors_Folder
+  feedback: Feedback
+azure_openai:
+  api_key: 98dkVOUDLG4wm9OCmF8pxnR48BoUCPYKzfI9p4zYGP5uVh7TiLLwJQQJ99BDAC5RqLJXJ3w3AAABACOGWUeW
+  endpoint: https://ai2ets.openai.azure.com/
+  api_version: 2024-02-15-preview
+  deployment_gpt4o: gpt-4o
+module_mapping:
+- jira_name: teststep
+  web_app_name: Runs
+- jira_name: test
+  web_app_name: Tasks
+- jira_name: structurelevel
+  web_app_name: Projects
+execution:
+  max_retries: 3
+  screenshot_on_every_step: true
+  record_video: true
+  generate_script: true
+  headless: false
+
+vector_database:
+  persist_directory: data/chromadb_llm
+  collections:
+    base_selectors: selectors_base_collection
+    learned_insights: learned_insights_collection
+  embedding:
+    model: text-embedding-3-small
+    dimension: 1536
