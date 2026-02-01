@@ -16,6 +16,7 @@ import requests
 # from insight_storage import InsightStorage
 # import json
 IS_RERUN = "--rerun" in sys.argv
+IS_VISIBLE = "--visible" in sys.argv or IS_RERUN
 
 from config_loader import load_config, get_azure_client
 from report_generator import generate_html_report
@@ -241,6 +242,30 @@ class JiraAgent(BaseAgent):
                 ticket_content = issue.fields.description or ""
                 ticket_title = issue.fields.summary or ""
                 
+                 # 🔥 FIX: Extract module from Component field
+                components = issue.fields.components
+                module = ""
+                if components:
+                # Get first component name
+                    component_name = components[0].name
+                
+                # 🔥 Map Jira component to code module name
+                    component_mapping = {
+                        'teststep': 'Teststep',
+                        'structurlevel': 'Projects',  # ✅ ADD THIS
+                        'tests': 'Tests',
+                        'equipment': 'Equipment',
+                        'projects': 'Projects',
+                        'dashboard': 'Dashboard',
+                        'sequences': 'Sequences',
+                        'auth': 'Auth'
+                    }
+                
+                    module = component_mapping.get(component_name.lower(), component_name)
+                    logger.info(f"✅ Module extracted from Jira component: '{component_name}' → '{module}'")
+                else:
+                    logger.warning("⚠️ No component found in Jira ticket, will use fallback detection")
+                
                 # DEBUG: Log raw ticket content
                 logger.debug("="*80)
                 logger.debug("RAW JIRA TICKET CONTENT:")
@@ -289,22 +314,62 @@ Parse this ticket and extract test steps in JSON format.
 
             parsed_data = json.loads(json_str)
             
-            # 🔹 Build canonical step_results from Jira (SOURCE OF TRUTH)
-            parsed_data["step_results"] = [
-               {
-                  "step_number": i + 1,
-                  "step_text": step.get("description", "").strip(),
-                  "status": "PENDING",
-                  "agent_used": "L1",
-                  "confidence": 0.0
-                }
-                for i, step in enumerate(parsed_data.get("steps", []))
-            ]
-            # 🔒 Freeze canonical step text (never mutate later)
-            for step in parsed_data["step_results"]:
-                step["_original_text"] = step["step_text"]
+            # 🔥 FIX: Add module from Jira component to parsed data
+            if module:
+                parsed_data['module'] = module
+                logger.info(f"✅ Using Jira component module: {module}")
+            else:
+            # Fallback to LLM-detected module or text parsing
+                parsed_data['module'] = parsed_data.get('module', '')
+                if not parsed_data['module']:
+                    logger.warning("⚠️ No module from Jira component or LLM, will use fallback")
+            
+# 🔥 ROBUST: Handle multiple possible key names from LLM response
 
-            logger.info(f"JiraAgent: Parsed {len(parsed_data.get('steps', []))} steps")
+# Step 1: Get steps array (handle "steps" or "test_steps")
+            raw_steps = (
+                parsed_data.get("steps") or 
+                parsed_data.get("test_steps") or 
+                parsed_data.get("steps_to_reproduce") or 
+                parsed_data.get("TestSteps") or
+                []
+            )
+
+# Step 2: Build step_results with flexible key handling
+            parsed_data["step_results"] = []
+            for i, step in enumerate(raw_steps):
+    # Extract step text (handle "text", "description", or "action")
+                step_text = (
+                    step.get("text") or
+                    step.get("description") or
+                    step.get("action") or
+                    ""
+                ).strip()
+    
+    # Extract step number (handle "number" or "step_number")
+                step_num = (
+                    step.get("number") or
+                    step.get("step_number") or
+                    (i + 1)
+                )
+    
+    # Build step_result entry
+                parsed_data["step_results"].append({
+                    "step_number": step_num,
+                    "step_text": step_text,
+                    "status": "PENDING",
+                    "agent_used": "L1",
+                    "confidence": 0.0,
+                    "_original_text": step_text
+                            })
+
+# Log result
+            logger.info(f"JiraAgent: Parsed {len(parsed_data['step_results'])} steps")
+
+# Debug: Log first step if available
+            if parsed_data["step_results"]:
+                logger.debug(f"First step parsed: {parsed_data['step_results'][0]}")
+
             return parsed_data
 
         except json.JSONDecodeError as e:
@@ -443,7 +508,7 @@ class LearningAgent(BaseAgent):
         
         
 
-        self.similarity_threshold = config.get('memory', {}).get('learning_agent', {}).get('similarity_threshold', 0.85)
+        self.similarity_threshold = config.get('memory', {}).get('learning_agent', {}).get('similarity_threshold', 0.75)
 
         logger.debug(f"LearningAgent: Collection '{collection_name}' initialized")
 
@@ -588,7 +653,7 @@ class SelectorAgentL1(BaseAgent):
         # Store config for vector search functions
         self.config = config
 
-        self.confidence_threshold = self.agent_config.get('confidence_threshold', 0.75)
+        self.confidence_threshold = self.agent_config.get('confidence_threshold', 0.70)
         self.retry_threshold = self.agent_config.get('retry_threshold', 0.70)
 
     def discover_selector(self, step_text: str, context: Dict[str, Any], state: TestExecutionState) -> Dict[str, Any]:
@@ -1502,21 +1567,6 @@ class PLCDTestingAssistantSeq:
     Sequential context tracking version with LangGraph agents
     """
 
-    # def __init__(self, config: Dict[str, Any]):
-    #     """
-    #     Initialize testing assistant
-
-    #     Args:
-    #         config: Configuration dictionary
-    #     """
-    #     self.config = config
-
-    #     # Initialize agents
-    #     # self.jira_agent = JiraAgent(config)
-    #     if not config.get("rerun_mode"):
-    #         self.jira_agent = JiraAgent(config)
-    #     else:
-    #         self.jira_agent = None
     def __init__(self, config: Dict[str, Any]):
         """
         Initialize testing assistant
@@ -1746,154 +1796,237 @@ class PLCDTestingAssistantSeq:
         }
         return state
     
+
+    # def _parse_ticket_llm(self, state: TestExecutionState) -> Dict[str, Any]:
+    #     """Parse ticket using JiraAgent (single source of truth)."""
+    #     print("\n[1/6] Parsing ticket...", end="", flush=True)
+
+    # # ---------------------------------------------------------
+    # # RERUN MODE: try summary first, fallback to Jira if invalid
+    # # ---------------------------------------------------------
+    #     if self.config.get("rerun_mode"):
+    #         from pathlib import Path
+
+    #         summary_path = Path("Reports/summaries") / f"summary_{state['ticket_id']}_latest.json"
+
+    #         if summary_path.exists():
+    #             try:
+    #                 with open(summary_path, "r", encoding="utf-8") as f:
+    #                     summary_data = json.load(f)
+
+    #                 if summary_data.get("step_results"):
+    #                     state["step_results"] = summary_data["step_results"]
+    #                     state["total_steps"] = len(state["step_results"])
+    #                     state["ticket_title"] = summary_data.get("ticket_title", "")
+    #                     state["module"] = summary_data.get("module", "")
+    #                     state["agent_chain"].append("SummaryLoader")
+
+    #                     print(" [OK] (Loaded from summary)")
+    #                     print(f"Module: {state['module']} | Steps: {state['total_steps']}")
+    #                     return summary_data
+
+    #             except Exception as e:
+    #                 logger.warning(f"Summary load failed, falling back to Jira: {e}")
+
+    #         print(" (summary empty, fetching from Jira)...", end="", flush=True)
+
+    # # ---------------------------------------------------------
+    # # NORMAL MODE OR FALLBACK → ALWAYS USE JiraAgent
+    # # ---------------------------------------------------------
+    #     if not self.jira_agent:
+    #         self.jira_agent = JiraAgent(self.config)
+
+    #     ticket_data = self.jira_agent.parse_ticket(state["ticket_id"])
     
+    # # 🔒 SINGLE SOURCE OF TRUTH
+    #     state["ticket_title"] = ticket_data.get("title", "")
+    
+    # # 🔥 FIX: Populate step_results FIRST, then infer module
+    #     state["step_results"] = ticket_data.get("step_results", [])
+    #     state["total_steps"] = len(state["step_results"])
+    
+    # # 🔥 NOW infer module from populated steps
+    #     llm_module = ticket_data.get("module", "")
+    #     if llm_module and llm_module not in ["", "Unknown"]:
+    #         state["module"] = llm_module
+    #         logger.info(f"Using LLM-detected module: {llm_module}")
+    #     else:
+    #         state["module"] = self._infer_module_from_steps(
+    #             state["step_results"],  # ✅ NOW POPULATED WITH 7 STEPS
+    #             self.config
+    #         )
+    #         logger.info(f"Using config-inferred module: {state['module']}")
+    
+    #     state["agent_chain"].append("JiraAgent")
+
+    # # 🔥 HARD GUARD
+    #     if not state["step_results"]:
+    #         raise RuntimeError(
+    #             f"No steps parsed from Jira ticket {state['ticket_id']}. "
+    #             f"ticket_data keys: {list(ticket_data.keys())}. "
+    #             f"Check LLM JSON keys (steps / test_steps / action)."
+    #         )
+
+    #     print(" [OK] (Fetched from Jira)")
+    #     print(f"Module: {state['module']} | Steps: {state['total_steps']}")
+
+    #     return ticket_data
+    
+    # Replace _parse_ticket_llm method (around line 1815)
+
     def _parse_ticket_llm(self, state: TestExecutionState) -> Dict[str, Any]:
-        """Parse ticket using JiraAgent OR load from summary in rerun mode"""
+        """Parse ticket using JiraAgent (single source of truth)."""
         print("\n[1/6] Parsing ticket...", end="", flush=True)
 
-    # 🔥 FIX: In rerun mode, ALWAYS fetch from Jira (don't trust empty summary)
-        if self.config.get("rerun_mode"):
-        # Check if summary exists and has valid steps
+    # ---------------------------------------------------------
+    # RERUN MODE: Load from summary FIRST
+    # ---------------------------------------------------------
+        if self.config.get("rerun_mode") or IS_RERUN:
             from pathlib import Path
-            # import json
-        
-            summaries_folder = Path("Reports/summaries")
-            summary_path = summaries_folder / f"summary_{state['ticket_id']}_latest.json"
-        
-            has_valid_summary = False
+
+        # 🔥 FIX: Always use _latest.json for reruns
+            summary_path = Path("Reports/summaries") / f"summary_{state['ticket_id']}_latest.json"
+
+            logger.info(f"🔄 [RERUN MODE] Looking for summary: {summary_path}")
+
             if summary_path.exists():
                 try:
-                    with open(summary_path, 'r', encoding='utf-8') as f:
+                    with open(summary_path, "r", encoding="utf-8") as f:
                         summary_data = json.load(f)
-                
-                # Check if summary has valid step_results
-                    if summary_data.get('step_results') and len(summary_data['step_results']) > 0:
-                        has_valid_summary = True
-                    
-                    # Reconstruct ticket_data from summary
-                        ticket_data = {
-                            'title': summary_data.get('module', ''),
-                            'module': summary_data.get('module', ''),
-                            'steps': []
-                        }
-                    
-                        for step_result in summary_data['step_results']:
-                            ticket_data['steps'].append({
-                                'number': step_result.get('step_number'),
-                                'description': step_result.get('step_text'),
-                                'text': step_result.get('step_text')
-                            })
-                    
-                        state['ticket_title'] = ticket_data.get('title', '')
-                        state['module'] = ticket_data.get('module', '')
-                        state['total_steps'] = len(ticket_data['steps'])
-                        state['agent_chain'].append('SummaryLoader')
-                    
-                    # Build canonical step_results
-                        state["step_results"] = [
-                            {
-                                "step_number": i + 1,
-                                "step_text": step.get("description", "").strip(),
-                                "status": "PENDING",
-                                "agent_used": "L1",
-                                "confidence": 0.0
-                            }
-                            for i, step in enumerate(ticket_data['steps'])
-                        ]
-                    
-                        print(f" [OK] (Loaded from summary)")
+
+                # 🔥 Verify summary has steps
+                    if summary_data.get("step_results") and len(summary_data["step_results"]) > 0:
+                        state["step_results"] = summary_data["step_results"]
+                        state["total_steps"] = len(state["step_results"])
+                        state["ticket_title"] = summary_data.get("ticket_title", "")
+                        state["module"] = summary_data.get("module", "")
+                        state["agent_chain"].append("SummaryLoader")
+    
+                        print(" [OK] (Loaded from summary)")
                         print(f"Module: {state['module']} | Steps: {state['total_steps']}")
                     
-                        return ticket_data
+                    # 🔥 DEBUG: Log first 3 steps
+                        for i, step in enumerate(state["step_results"][:3], 1):
+                            logger.debug(f"  Step {i}: {step.get('step_text', 'N/A')}")
+                    
+                        return summary_data
+                    else:
+                        logger.warning("⚠️ Summary exists but has no steps, falling back to Jira")
+
                 except Exception as e:
-                    logger.warning(f"Failed to load valid summary: {e}")
-        
-        # 🔥 FALLBACK: If summary is empty/invalid, fetch from Jira
-            logger.info(f"Summary empty or invalid, fetching {state['ticket_id']} from Jira...")
-            print(f" (summary empty, fetching from Jira)...", end="", flush=True)
-        
-        # Use JiraAgent to fetch (must be initialized even in rerun mode now)
-            if not self.jira_agent:
-            # Re-initialize Jira agent if needed
-                from jira import JIRA
-                jira_cfg = self.config.get('jira', {})
-                self.jira_agent = JiraAgent(self.config)
-                logger.info("Re-initialized JiraAgent for rerun mode")
-            
-            ticket_data = self.jira_agent.parse_ticket(state['ticket_id'])
-        
-            state['ticket_title'] = ticket_data.get('title', '')
-            state['module'] = ticket_data.get('module', '')
-            state['total_steps'] = len(ticket_data.get('steps', []))
-            state['agent_chain'].append('JiraAgent')
-        
-        # Build canonical step_results
-            state["step_results"] = [
-                {
-                    "step_number": i + 1,
-                    "step_text": step.get("description", "").strip(),
-                    "status": "PENDING",
-                    "agent_used": "L1",
-                    "confidence": 0.0
-                }
-                for i, step in enumerate(ticket_data.get("steps", []))
-            ]
-        
-            print(f" [OK] (Fetched from Jira)")
-            print(f"Module: {state['module']} | Steps: {state['total_steps']}")
-        
-            return ticket_data
-    
-    # Normal mode: Parse from Jira
-        ticket_data = self.jira_agent.parse_ticket(state['ticket_id'])
+                    logger.warning(f"⚠️ Summary load failed: {e}, falling back to Jira")
+            else:
+                logger.warning(f"⚠️ Summary not found at {summary_path}, falling back to Jira")
+                print(" (no summary found, fetching from Jira)...", end="", flush=True)
 
-        state['ticket_title'] = ticket_data.get('title', '')
-        state['module'] = ticket_data.get('module', '')
-        state['total_steps'] = len(ticket_data.get('steps', []))
-        state['agent_chain'].append('JiraAgent')
-    
-    # Build canonical step_results
-        state["step_results"] = [
-            {
-                "step_number": i + 1,
-                "step_text": step.get("description", "").strip(),
-                "status": "PENDING",
-                "agent_used": "L1",
-                "confidence": 0.0
-            }
-            for i, step in enumerate(ticket_data.get("steps", []))
-        ]
+    # ---------------------------------------------------------
+    # NORMAL MODE OR FALLBACK → ALWAYS USE JiraAgent
+    # ---------------------------------------------------------
+        if not self.jira_agent:
+            self.jira_agent = JiraAgent(self.config)
 
-        print(f" [OK]")
-        print(f"Ticket: {ticket_data.get('title', 'N/A')}")
+        ticket_data = self.jira_agent.parse_ticket(state["ticket_id"])
+    
+    # 🔒 SINGLE SOURCE OF TRUTH
+        state["ticket_title"] = ticket_data.get("title", "")
+    
+    # 🔥 FIX: Populate step_results FIRST
+        state["step_results"] = ticket_data.get("step_results", [])
+        state["total_steps"] = len(state["step_results"])
+    
+    # 🔥 NOW infer module from populated steps
+        llm_module = ticket_data.get("module", "")
+        if llm_module and llm_module not in ["", "Unknown"]:
+            state["module"] = llm_module
+            logger.info(f"Using LLM-detected module: {llm_module}")
+        else:
+            state["module"] = self._infer_module_from_steps(
+                state["step_results"],
+                self.config
+            )
+            logger.info(f"Using config-inferred module: {state['module']}")
+    
+        state["agent_chain"].append("JiraAgent")
+
+    # 🔥 HARD GUARD
+        if not state["step_results"]:
+            raise RuntimeError(
+                f"No steps parsed from Jira ticket {state['ticket_id']}. "
+                f"ticket_data keys: {list(ticket_data.keys())}. "
+                f"Check LLM JSON keys (steps / test_steps / action)."
+            )
+
+        print(" [OK] (Fetched from Jira)")
         print(f"Module: {state['module']} | Steps: {state['total_steps']}")
 
         return ticket_data
     
+    # Add after _parse_ticket_llm() method
+
+    # Replace existing _infer_module_from_steps() method (around line 2047)
+
+    def _infer_module_from_steps(self, steps: List[Dict], config: Dict) -> str:
+        """
+        Infer module from step text using YAML module_detection config
     
+        Args:
+            steps: List of parsed step dictionaries
+            config: Full configuration dictionary
+        
+        Returns:
+            Detected module name or 'Common'
+        """
+        import re
     
-
-    # def _init_browser(self, playwright) -> Browser:
-    #     """Initialize browser"""
-    #     print("\n[2/6] Initializing browser...", end="", flush=True)
-
-    #     browser_type = self.config['browser']
-    #     headless = self.config['execution']['headless']
-
-    #     if browser_type == 'edge':
-    #         browser = playwright.chromium.launch(
-    #             headless=headless,
-    #             channel='msedge',
-    #             args=['--start-maximized']
-    #         )
-    #     else:
-    #         browser = playwright.chromium.launch(
-    #             headless=headless,
-    #             args=['--start-maximized']
-    #         )
-
-    #     print(f" [OK]")
-    #     return browser
+        module_detection = config.get('agents', {}).get('jira_agent', {}).get('module_detection', {})
+    
+    # Get all step texts
+        all_text = " ".join([
+            step.get('step_text', step.get('description', step.get('text', '')))
+            for step in steps
+        ]).lower()
+    
+        logger.debug(f"Module detection - Combined text: {all_text[:200]}")
+    
+    # 1. Check navigation patterns first (highest priority)
+        nav_patterns = module_detection.get('navigation_patterns', [])
+        ui_to_code = module_detection.get('ui_to_code_mapping', {})
+    
+        for pattern in nav_patterns:
+        # 🔥 FIX: Match one or more words after the pattern (not just \w+)
+        # "navigate to {module}" → "navigate to (.+?)(?:\s|$)"
+            regex_pattern = pattern.replace('{module}', r'(.+?)(?:\s+(?:module|page|screen)|$)')
+            match = re.search(regex_pattern, all_text, re.IGNORECASE)
+            if match:
+                ui_name = match.group(1).strip().lower()
+                logger.debug(f"Navigation pattern matched: '{ui_name}'")
+            
+            # Map UI name to code name (handle multi-word matches)
+            # Check each word in the matched text
+                for word in ui_name.split():
+                    if word in ui_to_code:
+                        module = ui_to_code[word]
+                        logger.info(f"Module detected from navigation: '{module}' (UI: '{ui_name}')")
+                        return module
+            
+            # If no mapping found, try direct lookup of full match
+                if ui_name in ui_to_code:
+                    module = ui_to_code[ui_name]
+                    logger.info(f"Module detected from navigation: '{module}' (UI: '{ui_name}')")
+                    return module
+    
+    # 2. Check keyword-based detection (fallback)
+        keywords_map = module_detection.get('keywords', {})
+    
+        for module_name, keywords in keywords_map.items():
+            if any(kw.lower() in all_text for kw in keywords):
+                logger.info(f"Module detected from keywords: '{module_name}'")
+                return module_name
+    
+    # 3. Default fallback
+        default_module = module_detection.get('default_module', 'Common')
+        logger.info(f"Module detection failed, using default: '{default_module}'")
+        return default_module
     
     def _init_browser(self, playwright) -> Browser:
         """Initialize browser"""
@@ -1902,25 +2035,30 @@ class PLCDTestingAssistantSeq:
         browser_type = self.config['browser']
 
     # ✅ FORCE browser to open during rerun
-        if IS_RERUN:
-            headless = False
-            slow_mo = 200   # helps you visually see actions
-            print(" [RERUN MODE: Browser visible]")
+        # if IS_RERUN:
+        #     headless = False
+        #     slow_mo = 200   # helps you visually see actions
+        #     print(" [RERUN MODE: Browser visible]")
+        # else:
+        #     headless = self.config['execution']['headless']
+        #     slow_mo = 0
+         # 🔥 FIX: Check IS_VISIBLE instead of IS_RERUN
+        if IS_VISIBLE:
+            headless = False  # Force browser to open
         else:
             headless = self.config['execution']['headless']
-            slow_mo = 0
 
         if browser_type == 'edge':
             browser = playwright.chromium.launch(
                 headless=headless,
-                slow_mo=slow_mo,
+                # slow_mo=slow_mo,
                 channel='msedge',
                 args=['--start-maximized']
             )
         else:
             browser = playwright.chromium.launch(
                 headless=headless,
-                slow_mo=slow_mo,
+                # slow_mo=slow_mo,
                 args=['--start-maximized']
             )
 
@@ -1993,7 +2131,12 @@ class PLCDTestingAssistantSeq:
         print("\n[5/6] Executing test steps with agents...")
         print("-" * 80)
 
-        steps = ticket_data.get("steps", [])
+        # steps = ticket_data.get("steps", [])
+        steps = state.get("step_results", [])
+        # 🔥 DEBUG: Verify we have steps to execute
+        logger.debug(f"DEBUG: _execute_steps_with_agents called")
+        logger.debug(f"DEBUG: state['total_steps']: {state.get('total_steps', 0)}")
+        logger.debug(f"DEBUG: len(state['step_results']): {len(state.get('step_results', []))}")
 
     # Ensure step_results has placeholder entries for each step (safe indexed writes)
         if not state.get("step_results") or len(state["step_results"]) < len(steps):
@@ -2013,7 +2156,14 @@ class PLCDTestingAssistantSeq:
         for idx, step_data in enumerate(steps):
         # Robustly resolve step number/text from different possible keys
             step_number = step_data.get("number") or step_data.get("step_number") or (idx + 1)
-            raw_text = (step_data.get("text") or step_data.get("description") or "").strip()
+            # raw_text = (step_data.get("text") or step_data.get("description") or "").strip()
+            raw_text = (
+                step_data.get("step_text") or 
+                step_data.get("_original_text") or 
+                step_data.get("text") or 
+                step_data.get("description") or 
+                ""
+            ).strip()
             clean_step_text = raw_text
 
         # Align index to enumerated idx (0-based)
@@ -2042,7 +2192,8 @@ class PLCDTestingAssistantSeq:
         # ------------------------------------------------------------------
         # LOGIN SKIP
         # ------------------------------------------------------------------
-            if clean_step_text.lower() in ["login", "log in", "sign in", "signin"]:
+            # if clean_step_text.lower() in ["login", "log in", "sign in", "signin"]:
+            if clean_step_text.lower().strip().rstrip('.').rstrip(',').strip() in ["login", "log in", "sign in", "signin"]:
                 if state.get("logged_in", False):
                     print(" [SKIPPED]")
                 # Mark skipped in state
@@ -2141,45 +2292,89 @@ class PLCDTestingAssistantSeq:
                 else:
                     logger.warning(f"   ⚠️ Pending folder does not exist!")
 
-            # ------------------------------------------------------------------
-            # SELECTOR DISCOVERY (Learning -> L1 -> L2)
-            # ------------------------------------------------------------------
-            # First try learning agent (queries pending + ChromaDB)
-                learned = None
+
+# ------------------------------------------------------------------
+# SELECTOR DISCOVERY (Pending Feedback -> Learning -> L1 -> L2)
+# ------------------------------------------------------------------
+
+# 🔥 PRIORITY 1: Check pending insights FIRST (user feedback)
+                pending_selector = None
                 try:
-                    learned = self.learning_agent.query_learned_selector(clean_step_text, context)
+    # Check if we have pending insights injected into state
+                    if state.get("pending_insights"):
+                        for insight in state["pending_insights"]:
+                            if insight.get("step_number") == step_number:
+                                pending_selector = insight.get("selector")
+                                logger.info(f"✅ [Step {step_number}] Found pending feedback (injected):")
+                                logger.info(f"   Selector: {pending_selector}")
+                                break
+    
+    # Also check pending folder directly
+                    if not pending_selector:
+                        pending_folder = Path(__file__).parent / "insights" / "pending"
+                        if pending_folder.exists():
+                            feedback_files = list(pending_folder.glob(f"{ticket_id}_step{step_number}_*.json"))
+                            if feedback_files:
+                # Use the most recent feedback file
+                                most_recent = max(feedback_files, key=lambda f: f.stat().st_mtime)
+                                with open(most_recent, 'r', encoding='utf-8') as file:
+                                    insight_data = json.load(file)
+                                    pending_selector = insight_data.get('selector')
+                                    logger.info(f"✅ [Step {step_number}] Found pending feedback (file):")
+                                    logger.info(f"   Selector: {pending_selector}")
+                                    logger.info(f"   File: {most_recent.name}")
                 except Exception as e:
-                    logger.error(f"❌ LearningAgent query failed: {e}")
+                    logger.error(f"Error checking pending insights: {e}")
 
-                if learned:
-                    logger.info(f"✅ [Step {step_number}] Learning agent found selector:")
-                    logger.info(f"   Selector: {learned['selector']}")
-                    logger.info(f"   Confidence: {learned['confidence']}")
-                    logger.info(f"   Source: {learned.get('source', 'unknown')}")
-                else:
-                    logger.warning(f"⚠️ [Step {step_number}] Learning agent found nothing")
-
-            # 🔥 CRITICAL: If learned selector exists with high confidence, USE IT (no fallback)
-                if learned and learned.get("confidence", 0) >= 0.95:
-                    selector = learned["selector"]
-                    confidence = learned["confidence"]
+# 🔥 If pending feedback exists, USE IT (highest priority)
+                if pending_selector:
+                    selector = pending_selector
+                    confidence = 1.0  # Pending feedback always has max confidence
                     agent_used = "Learning (Explicit Feedback)"
-                
-                    logger.info(f"🎯 [Step {step_number}] FORCING LEARNED SELECTOR:")
+    
+                    logger.info(f"🎯 [Step {step_number}] USING PENDING FEEDBACK (USER PROVIDED):")
                     logger.info(f"   Selector: {selector}")
                     logger.info(f"   Confidence: {confidence}")
-                    logger.info(f"   Source: {learned.get('source', 'unknown')}")
-                
-                # 🔥 SKIP L1/L2 entirely (explicit feedback wins)
-                else:
-                # Fallback to L1 (RAG + LLM)
-                    l1_result = self.selector_agent_l1.discover_selector(clean_step_text, context, state)
-                    agent_used = "L1"
-                    selector = l1_result.get("selector")
-                    confidence = l1_result.get("confidence", 0.0)
+                    logger.info(f"   Source: pending_feedback")
 
-                # If L1 gives low confidence or validation indicates not present -> try L2
-                    selector_validated = l1_result.get("selector_validated", True)
+# 🔥 PRIORITY 2: Try learning agent (ChromaDB runtime learned)
+                elif True:  # Changed from 'else' to make it explicit
+                    learned = None
+                    try:
+                        learned = self.learning_agent.query_learned_selector(clean_step_text, context)
+                    except Exception as e:
+                        logger.error(f"❌ LearningAgent query failed: {e}")
+
+                    if learned:
+                        logger.info(f"✅ [Step {step_number}] Learning agent found selector:")
+                        logger.info(f"   Selector: {learned['selector']}")
+                        logger.info(f"   Confidence: {learned['confidence']}")
+                        logger.info(f"   Source: {learned.get('source', 'unknown')}")
+                    else:
+                        logger.warning(f"⚠️ [Step {step_number}] Learning agent found nothing")
+
+    # If learned selector exists with high confidence, USE IT
+                    if learned and learned.get("confidence", 0) >= 0.70:
+                        selector = learned["selector"]
+                        confidence = learned["confidence"]
+                        agent_used = "Learning (Runtime Learned)"
+                        selector_validated = True  
+        
+                        logger.info(f"🎯 [Step {step_number}] USING LEARNED SELECTOR (CHROMADB):")
+                        logger.info(f"   Selector: {selector}")
+                        logger.info(f"   Confidence: {confidence}")
+                        logger.info(f"   Source: {learned.get('source', 'unknown')}")
+    
+    # 🔥 PRIORITY 3: Fallback to L1 (RAG + LLM)
+                    else:
+                        l1_result = self.selector_agent_l1.discover_selector(clean_step_text, context, state)
+                        agent_used = "L1"
+                        selector = l1_result.get("selector")
+                        confidence = l1_result.get("confidence", 0.0)
+
+        # If L1 gives low confidence or validation indicates not present -> try L2
+                        selector_validated = l1_result.get("selector_validated", True)
+            
                     if not selector or (not selector_validated and confidence < 0.75) or confidence < 0.70:
                         logger.info(f"  [L1 Low Confidence: {confidence:.2f}] Trying L2...")
                         l2_result = self.selector_agent_l2.discover_selector(page, clean_step_text, context)
@@ -3156,7 +3351,7 @@ def search_learned_insights(chroma_client, azure_client, config: Dict[str, Any],
         # Get config values
         vector_search_config = config.get('vector_search', {})
         max_results = vector_search_config.get('learned_max_results', 3)
-        similarity_threshold = vector_search_config.get('similarity_threshold', 0.85)
+        similarity_threshold = vector_search_config.get('similarity_threshold', 0.75)
         confidence_boost = vector_search_config.get('learned_confidence_boost', 0.2)
 
         # Build query text with module context
@@ -3364,7 +3559,7 @@ def search_pending_insights_embeddings(azure_client, config: Dict[str, Any],
         vector_search_config = config.get('vector_search', {})
         insights_base = Path(vector_search_config.get('pending_folder', 'insights/pending')).parent
         max_results = vector_search_config.get('pending_max_results', 3)
-        similarity_threshold = vector_search_config.get('pending_threshold', 0.75)
+        similarity_threshold = vector_search_config.get('pending_threshold', 0.70)
         confidence_boost = vector_search_config.get('pending_confidence_boost', 0.15)
 
         # Define all insight folders in priority order
@@ -3507,7 +3702,8 @@ def run_from_external(ticket_id: str):
     logger.info(f"🚀 External run requested for ticket: {ticket_id}")
 
     # This is EXACTLY what CLI does
-    sys.argv = ["plcd_taseq.py", ticket_id]
+    # sys.argv = ["plcd_taseq.py", ticket_id]
+    sys.argv = ["plcd_taseq.py", ticket_id, "--no-feedback"]
     main()
 
 
@@ -3666,6 +3862,7 @@ if __name__ == "__main__":
             import traceback
             traceback.print_exc()
             sys.exit(1)
+    
     
     # ============================================================================
     # MODE 3: Interactive feedback loop (manual CLI usage only)

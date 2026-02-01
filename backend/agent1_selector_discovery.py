@@ -170,7 +170,8 @@ class Agent1SelectorDiscovery:
         module_match = 1.0 if metadata.get('module') == current_module else 0.5
 
         # Priority score (normalize 0-100 to 0-1)
-        priority_score = metadata.get('priority', 50) / 100.0
+        # priority_score = metadata.get('priority', 50) / 100.0
+        priority_score = float(metadata.get('priority') or 50) / 100.0
 
         # Calculate weighted confidence
         scoring_config = self.agent_config['scoring']

@@ -248,14 +248,6 @@ async def rerun_test(
     try:
         logger.info(f"📥 Received rerun request for ticket: {ticket_id}")
 
-        # # Validate ticket exists
-        # ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).first()
-        # if not ticket:
-        #     raise HTTPException(
-        #         status_code=404,
-        #         detail=f"Ticket '{ticket_id}' not found. Please upload the ticket first."
-        #     )
-
 
         # REMOVE ticket DB check
         # ticket = None
@@ -490,6 +482,10 @@ def rerun_test_in_background(
         else:
             logger.error(f"❌ Steps file not found: {steps_file}")
             steps_saved = False    
+        
+# =====================================================
+# LOAD STEPS FROM JSON AND SAVE TO DB
+# =====================================================
             
         # Parse results from output or find generated files
         # Look for the latest report/video files
@@ -1594,54 +1590,16 @@ def process_feedback_and_rerun(
             raise Exception("Python executable not found")
 
         # =====================================================
-        # 2️⃣ PROCESS FEEDBACK (CLI EQUIVALENT)
+        # 2️⃣ RUN SUBPROCESS (FEEDBACK + RERUN)
         # =====================================================
-        if feedback_text:
-            logger.info("📝 Processing feedback via CLI-equivalent command")
-
-            cmd = [
-                str(python_exe),
-                "plcd_taseq.py",
-                ticket_id,
-                "--process-feedback",
-                feedback_text
-            ]
-
-            result = subprocess.run(
-                cmd,
-                cwd=str(external_project_path),
-                capture_output=True,
-                text=True,
-                timeout=120
-            )
-
-            logger.info(f"[FEEDBACK STDOUT]\n{result.stdout}")
-            if result.stderr:
-                logger.warning(f"[FEEDBACK STDERR]\n{result.stderr}")
-
-            if result.returncode != 0:
-                raise Exception("Feedback processing failed")
-
-            # 🔥 Ensure feedback file exists
-            pending_dir = external_project_path / "insights" / "pending"
-            feedback_files = list(pending_dir.glob(f"{ticket_id}_step*_*.json"))
-
-            if not feedback_files:
-                raise Exception("Feedback file not created")
-
-            logger.info(f"✅ Feedback saved: {feedback_files[-1].name}")
-
-        # =====================================================
-        # 3️⃣ RERUN TEST (CLI EQUIVALENT)
-        # =====================================================
-        logger.info("🏃 Running test with learned feedback")
+        logger.info("🏃 Running CLI pipeline with feedback")
 
         cmd = [
             str(python_exe),
             "plcd_taseq.py",
             ticket_id,
-            "--rerun",
-            "--no-feedback"
+            "--process-feedback",
+            feedback_text
         ]
 
         result = subprocess.run(
@@ -1652,83 +1610,131 @@ def process_feedback_and_rerun(
             timeout=600
         )
 
-        logger.info(f"[RERUN STDOUT]\n{result.stdout}")
+        logger.info(f"📤 Subprocess exit code: {result.returncode}")
+        if result.stdout:
+            logger.info(f"📝 STDOUT:\n{result.stdout[-2000:]}")
         if result.stderr:
-            logger.warning(f"[RERUN STDERR]\n{result.stderr}")
+            logger.warning(f"⚠️ STDERR:\n{result.stderr[-2000:]}")
 
+        # 🔥 CRITICAL FIX: DON'T RAISE EXCEPTION ON NON-ZERO EXIT CODE
+        # The subprocess might fail a step but still generate valid artifacts
         if result.returncode != 0:
-            raise Exception("Test rerun failed")
+            logger.warning(f"⚠️ Subprocess exited with code {result.returncode}, but continuing to load artifacts")
 
         # =====================================================
-        # 4️⃣ LOAD STEPS JSON (SOURCE OF TRUTH)
+        # 3️⃣ LOAD STEPS JSON (SOURCE OF TRUTH)
         # =====================================================
         steps_file = external_project_path / "Reports" / "steps" / f"steps_{ticket_id}.json"
 
         if not steps_file.exists():
-            raise Exception("Steps file not generated")
+            # 🔥 FIX: Wait up to 5 seconds for the file to appear
+            logger.info(f"⏳ Waiting for steps file: {steps_file}")
+            for i in range(50):  # 50 * 0.1s = 5 seconds
+                if steps_file.exists():
+                    logger.info(f"✅ Steps file found after {i * 0.1}s")
+                    break
+                time.sleep(0.1)
 
-        with open(steps_file, "r", encoding="utf-8") as f:
-            steps = json.load(f)
+        steps_saved = False
+        if steps_file.exists():
+            with open(steps_file, "r", encoding="utf-8") as f:
+                steps = json.load(f)
 
-        # Clear old steps
-        db.query(ExecutionStep).filter(
-            ExecutionStep.execution_id == execution_id
-        ).delete()
-        db.commit()
+            logger.info(f"✅ Loaded {len(steps)} steps from JSON")
 
-        for s in steps:
-            db.add(ExecutionStep(
-                execution_id=execution_id,
-                step_num=s["step_number"],
-                step_text=s["step_text"],
-                status=s["status"],
-                selector_used=s.get("selector"),
-                agent_used=s.get("agent_used"),
-                confidence=s.get("confidence", 0.0),
-                action_type=s.get("action_type")
-            ))
+            # Clear old steps
+            db.query(ExecutionStep).filter(
+                ExecutionStep.execution_id == execution_id
+            ).delete()
+            db.commit()
 
-        db.commit()
-        logger.info(f"✅ {len(steps)} steps saved to DB")
+            for s in steps:
+                db.add(ExecutionStep(
+                    execution_id=execution_id,
+                    step_num=s["step_number"],
+                    step_text=s["step_text"],
+                    status=s["status"],
+                    selector_used=s.get("selector"),
+                    agent_used=s.get("agent_used"),
+                    confidence=s.get("confidence", 0.0),
+                    action_type=s.get("action_type")
+                ))
+
+            db.commit()
+            steps_saved = True
+            logger.info(f"✅ {len(steps)} steps saved to DB")
+        else:
+            logger.error(f"❌ Steps file not found: {steps_file}")
 
         # =====================================================
-        # 5️⃣ GENERATE SUMMARY (DB → JSON)
+        # 4️⃣ GENERATE SUMMARY (EVEN IF SUBPROCESS FAILED)
         # =====================================================
-        service = TestExecutionService(db)
-        service._generate_summary_from_db(execution_id, ticket_id)
+        if steps_saved:
+            try:
+                service = TestExecutionService(db)
+                logger.info(f"📊 Generating summary for {execution_id}")
+                service._generate_summary_from_db(execution_id, ticket_id)
+                
+                # Verify summary was created
+                summary_path = external_project_path / "Reports" / "summaries" / f"summary_{ticket_id}_latest.json"
+                if summary_path.exists():
+                    logger.info(f"✅ Summary created: {summary_path}")
+                else:
+                    logger.error(f"❌ Summary not created at: {summary_path}")
+            except Exception as summary_error:
+                logger.error(f"❌ Summary generation failed: {summary_error}")
+                import traceback
+                logger.error(traceback.format_exc())
 
         # =====================================================
-        # 6️⃣ FINALIZE EXECUTION
+        # 5️⃣ FINALIZE EXECUTION
         # =====================================================
-        execution.status = "completed"
-        execution.overall_status = "FAILED" if any(
-            s["status"] == "FAILED" for s in steps
-        ) else "PASSED"
-        execution.completed_at = datetime.now()
-
-        # Attach artifacts
+        # Find report
         reports = sorted(
             (external_project_path / "Reports").glob(f"*{ticket_id}*.html"),
             key=lambda p: p.stat().st_mtime,
             reverse=True
         )
-        if reports:
-            execution.report_path = str(reports[0])
+        report_path = str(reports[0]) if reports else None
 
+        # Find video
         videos = sorted(
             (external_project_path / "Videos").glob("*.webm"),
             key=lambda p: p.stat().st_mtime,
             reverse=True
         )
-        if videos:
-            execution.video_path = str(videos[0])
+        video_path = str(videos[0]) if videos else None
 
+        # Determine overall status
+        overall_status = "FAILED" if any(
+            s["status"] == "FAILED" for s in steps
+        ) else "PASSED"
+
+        execution.status = "completed"
+        execution.overall_status = overall_status
+        execution.completed_at = datetime.now()
+        execution.report_path = report_path
+        execution.video_path = video_path
+        execution.error_message = None
         db.commit()
 
         logger.info(f"✅ RERUN COMPLETED for {execution_id}")
+        logger.info(f"   Status: {overall_status}")
+        logger.info(f"   Report: {report_path}")
+        logger.info(f"   Summary: Reports/summaries/summary_{ticket_id}_latest.json")
 
     except Exception as e:
         logger.error(f"❌ RERUN FAILED: {e}", exc_info=True)
+
+        # 🔥 TRY TO GENERATE SUMMARY EVEN ON ERROR
+        try:
+            steps_file = external_project_path / "Reports" / "steps" / f"steps_{ticket_id}.json"
+            if steps_file.exists():
+                logger.info("🔄 Attempting summary generation despite error...")
+                service = TestExecutionService(db)
+                service._generate_summary_from_db(execution_id, ticket_id)
+        except:
+            pass
 
         execution.status = "failed"
         execution.overall_status = "FAILED"
@@ -1739,8 +1745,6 @@ def process_feedback_and_rerun(
     finally:
         db.close()
         logger.info(f"🔒 Session closed for {execution_id}")
-
-
 
 @app.get("/api/debug/parse-report/{execution_id}")
 async def debug_parse_report(execution_id: str, db: Session = Depends(get_db)):
@@ -2141,13 +2145,6 @@ def get_chat_sessions(
     try:
         logger.info(f"📋 Fetching chat sessions (limit: {limit})")
 
-        # TODO: Add actual database query
-        # sessions = db.query(ChatSession).order_by(
-        #     ChatSession.created_at.desc()
-        # ).limit(limit).all()
-
-        # For now, return empty array
-        # Frontend will continue using localStorage
 
         return {
             "count": 0,
@@ -2246,15 +2243,6 @@ def _mark_execution_as_failed(
         db.rollback()
 
 
-# def execute_test_in_background(
-#     execution_id: str,
-#     ticket_id: str,
-#     project_id: Optional[int]
-# ):
-#     """
-#     Background task - FIXED VERSION
-#     """
-#     # ...existing code...
 class StepData(BaseModel):
     execution_id: str
     steps: list
@@ -2341,7 +2329,7 @@ def execute_test_in_background(
     # 🔥 LOG THE EXECUTION ID AT THE VERY START
     logger.info("="*70)
     logger.info(f"🚀 BACKGROUND TASK STARTED")
-    logger.info(f"   🆔 Execution ID: {execution_id}")  # <-- CRITICAL
+    logger.info(f"   🆔 Execution ID: {execution_id}")
     logger.info(f"   🎫 Ticket ID: {ticket_id}")
     logger.info("="*70)
 
@@ -2377,117 +2365,75 @@ def execute_test_in_background(
         logger.info(f"🏃 Executing: {ticket_id} --no-feedback for {execution_id}")
         
         result = subprocess.run(
-            [python_exe, str(plcd_script), ticket_id, "--no-feedback"],
+            [python_exe, str(plcd_script), ticket_id, "--no-feedback", "--visible"],
             cwd=str(external_project_path),
             capture_output=True,
             text=True,
             timeout=600
         )
         
-        # 🔥 ADD THIS: Log subprocess output
+        # 🔥 LOG SUBPROCESS OUTPUT (even if it failed)
         logger.info(f"📤 Subprocess return code: {result.returncode}")
         if result.stdout:
-            logger.info(f"📝 STDOUT:\n{result.stdout[:2000]}")  # First 2000 chars
+            logger.info(f"📝 STDOUT:\n{result.stdout[-2000:]}")  # Last 2000 chars
         if result.stderr:
-            logger.error(f"❌ STDERR:\n{result.stderr[:2000]}")
+            logger.error(f"❌ STDERR:\n{result.stderr[-2000:]}")
 
-# 🔥 ADD THIS: If subprocess failed, mark execution as failed
-        if result.returncode != 0:
-            raise Exception(f"Subprocess failed with return code {result.returncode}")
-        
-       
-        # ===============================
-# LOAD REAL STEPS FROM plcd_taseq
-# ===============================
-
+        # 🔥 CRITICAL FIX: Load steps from JSON even if subprocess failed
         steps_file = external_project_path / "Reports" / "steps" / f"steps_{ticket_id}.json"
-
         steps_saved = False
 
         if steps_file.exists():
             with open(steps_file, "r", encoding="utf-8") as f:
                 raw_steps = json.load(f)
 
-            logger.info(f"Loaded {len(raw_steps)} steps from JSON")
+            logger.info(f"✅ Loaded {len(raw_steps)} steps from JSON (subprocess exit code: {result.returncode})")
 
-    # 🔥 NORMALIZE STEP FORMAT FOR DB
+            # 🔥 NORMALIZE STEP FORMAT FOR DB
             normalized_steps = []
             for step in raw_steps:
                 normalized_steps.append({
                     "step_number": step.get("step_number"),
                     "step_text": step.get("step_text"),
-                    "selector": step.get("selector"),   # maps to selector_used
+                    "selector": step.get("selector"),
                     "status": step.get("status"),
                     "confidence": step.get("confidence", 0.0),
                     "agent_used": step.get("agent_used"),
                     "action_type": step.get("action_type"),
                 })
 
+            # 🔥 DELETE OLD STEPS FOR THIS EXECUTION
+            deleted = db.query(ExecutionStep).filter(
+                ExecutionStep.execution_id == execution_id
+            ).delete()
+            db.commit()
+            logger.info(f"🧹 Deleted {deleted} old steps for {execution_id}")
+
+            # Save steps to DB
             service._save_steps_to_db(execution_id, normalized_steps)
             steps_saved = True
-
-            logger.info(f"Saved {len(normalized_steps)} steps to DB")
+            logger.info(f"✅ Saved {len(normalized_steps)} steps to DB for {execution_id}")
         else:
-            logger.error("Steps JSON file not found, skipping DB save")
-        
-        # ===============================
-# GENERATE SUMMARY (ONLY IF STEPS EXIST)
-# ===============================
-       
-    
-        logger.info(f"📊 Preparing summary for {execution_id} (steps_saved={steps_saved})")
+            logger.error(f"❌ Steps JSON not found: {steps_file}")
 
-        if not steps_saved:
-    # Add a debug step so summary can be generated
-            logger.info(f"⚠️ No steps found - adding system message step")
-    
-            debug_step = ExecutionStep(
-                execution_id=execution_id,
-                step_num=1,
-                step_text="Test execution failed - Server unavailable or login failed",
-                status="FAILED",
-                selector_used="N/A",
-                agent_used="SYSTEM",
-                confidence=0.0,
-                action_type="system_error",
-                # screenshot_path=None
-            )
-            db.add(debug_step)
-            db.commit()
-    
-    # Verify the debug step was saved
-            verification = db.query(ExecutionStep).filter(
-                ExecutionStep.execution_id == execution_id
-            ).count()
-            logger.info(f"🔍 Debug step verification: {verification} steps in DB")
-    
-            steps_saved = True
-
-# Generate summary (should work now even with just 1 debug step)
-        try:
-            logger.info(f"📊 Calling _generate_summary_from_db for {execution_id}")
-            service._generate_summary_from_db(execution_id, ticket_id)
-    
-    # Verify summary file was created
-            summary_path = external_project_path / "Reports" / "summaries" / f"summary_{ticket_id}_latest.json"
-            if summary_path.exists():
-                logger.info(f"✅ Summary successfully created at: {summary_path}")
-            else:
-                logger.error(f"❌ Summary file NOT created despite no errors!")
-        
-        # Debug: Check summaries folder
-                summaries_folder = summary_path.parent
-                if summaries_folder.exists():
-                    existing = list(summaries_folder.glob("*.json"))
-                    logger.error(f"📁 Summaries folder contains: {[f.name for f in existing]}")
+        # 🔥 ALWAYS GENERATE SUMMARY (even if subprocess failed)
+        if steps_saved:
+            try:
+                logger.info(f"📊 Generating summary for {execution_id}")
+                service._generate_summary_from_db(execution_id, ticket_id)
+                
+                # Verify summary was created
+                summary_path = external_project_path / "Reports" / "summaries" / f"summary_{ticket_id}_latest.json"
+                if summary_path.exists():
+                    logger.info(f"✅ Summary successfully created at: {summary_path}")
                 else:
-                    logger.error(f"📁 Summaries folder does not exist: {summaries_folder}")
-            
-        except Exception as summary_error:
-            logger.error(f"❌ Summary generation FAILED for {execution_id}: {summary_error}")
-            import traceback
-            logger.error(traceback.format_exc())
-
+                    logger.error(f"❌ Summary file NOT created at: {summary_path}")
+            except Exception as summary_error:
+                logger.error(f"❌ Summary generation failed: {summary_error}")
+                import traceback
+                logger.error(traceback.format_exc())
+        else:
+            logger.warning(f"⚠️ No steps to generate summary from")
 
         # Step 5: Find artifacts
         report_path = None
@@ -2504,194 +2450,49 @@ def execute_test_in_background(
             )
             if reports:
                 report_path = str(reports[0])
-                logger.info(f"📄 Found report: {reports[0].name} for {execution_id}")
+                logger.info(f"📄 Found report: {reports[0].name}")
 
-        scripts_folder = external_project_path / "Generated_Scripts"
-        if scripts_folder.exists():
-            scripts = sorted(
-                scripts_folder.glob(f"*{ticket_id}*.py"),
-                key=lambda p: p.stat().st_mtime,
-                reverse=True
-            )
-            if scripts:
-                script_path = str(scripts[0])
-
-        videos_folder = external_project_path / "Videos"
-        if videos_folder.exists():
-            videos = sorted(
-                videos_folder.glob("*.webm"),
-                key=lambda p: p.stat().st_mtime,
-                reverse=True
-            )
-            if videos:
-                video_path = str(videos[0])
-
-        # Step 6: Parse overall status from report
-        if report_path:
+        # Parse overall status from report
+        if report_path and Path(report_path).exists():
             try:
                 with open(report_path, 'r', encoding='utf-8') as f:
                     html = f.read()
                 
-                # 🔥 FIX: Look for <div class="value status-PASSED">PASSED</div>
                 match = re.search(r'<div[^>]*class=["\'][^"\']*status-(PASSED|FAILED)[^"\']*["\'][^>]*>\s*(PASSED|FAILED)\s*</div>', html, re.IGNORECASE)
                 if match:
                     overall_status = match.group(2).upper()
-                    logger.info(f"✅ Parsed status: {overall_status} for {execution_id}")
-                else:
-                    # Fallback
-                    passed = len(re.findall(r'>\s*PASSED\s*<', html, re.IGNORECASE))
-                    failed = len(re.findall(r'>\s*FAILED\s*<', html, re.IGNORECASE))
-                    overall_status = "FAILED" if failed > 0 else ("PASSED" if passed > 0 else "UNKNOWN")
-                    logger.info(f"📊 Inferred status: {overall_status} for {execution_id}")
-                    
+                    logger.info(f"✅ Parsed status: {overall_status}")
             except Exception as e:
-                logger.warning(f"Could not parse status for {execution_id}: {e}")
+                logger.warning(f"Could not parse status: {e}")
 
-        # 🔥 Step 7: Parse and save steps - CRITICAL FIX
-        steps_saved = False
-        if report_path and Path(report_path).exists():
-            try:
-                logger.info(f"🔥 Parsing steps from report for {execution_id}")
-                with open(report_path, 'r', encoding='utf-8') as f:
-                    html = f.read()
-
-                table_match = re.search(r'<table[^>]*>(.*?)</table>', html, re.DOTALL | re.IGNORECASE)
-                
-                if table_match:
-                    # 🔥 DELETE old steps for THIS execution_id ONLY
-                    logger.info(f"🧹 Deleting old steps for {execution_id}")
-                    deleted = db.query(ExecutionStep).filter(
-                        ExecutionStep.execution_id == execution_id
-                    ).delete()
-                    db.commit()
-                    logger.info(f"🧹 Deleted {deleted} old steps for {execution_id}")
-                    
-                    # Parse rows
-                    table_html = table_match.group(1)
-                    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', table_html, re.DOTALL | re.IGNORECASE)
-                    
-                    logger.info(f"📋 Found {len(rows)} rows in table for {execution_id}")
-                    
-                    saved_count = 0
-                    for idx, row in enumerate(rows[1:], start=1):  # Skip header
-                        try:
-                            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
-                            
-                            if len(cells) < 6:
-                                continue
-                            
-                            # Parse fields
-                            step_num = int(re.sub(r'<[^>]+>', '', cells[0]).strip())
-                            step_text = re.sub(r'<[^>]+>', '', cells[1]).strip()[:200]
-                            
-                            selector_match = re.search(r'<span[^>]*class=["\']selector["\'][^>]*>(.*?)</span>', cells[2], re.DOTALL | re.IGNORECASE)
-                            selector = selector_match.group(1) if selector_match else re.sub(r'<[^>]+>', '', cells[2]).strip()
-                            selector = re.sub(r'<[^>]+>', '', selector).strip()
-                            
-                            agent_match = re.search(r'<span[^>]*class=["\']badge[^"\']*["\'][^>]*>(.*?)</span>', cells[3], re.DOTALL | re.IGNORECASE)
-                            agent = agent_match.group(1) if agent_match else re.sub(r'<[^>]+>', '', cells[3]).strip()
-                            agent = re.sub(r'<[^>]+>', '', agent).strip()
-                            
-                            confidence = 0.0
-                            try:
-                                confidence_text = re.sub(r'<[^>]+>', '', cells[4]).strip()
-                                confidence = float(confidence_text)
-                            except:
-                                pass
-                            
-                            status_match = re.search(r'<span[^>]*class=["\']badge\s+badge-(PASSED|FAILED|SKIPPED)["\'][^>]*>', cells[5], re.IGNORECASE)
-                            if status_match:
-                                status = status_match.group(1).upper()
-                            else:
-                                status_text = re.sub(r'<[^>]+>', '', cells[5]).strip().upper()
-                                status = status_text if status_text in ['PASSED', 'FAILED', 'SKIPPED'] else 'UNKNOWN'
-                            
-                            if step_text and status in ['PASSED', 'FAILED', 'SKIPPED']:
-                                # 🔥 CRITICAL: Use the correct execution_id
-                                step = ExecutionStep(
-                                    execution_id=execution_id,  # <-- THIS MUST BE CORRECT
-                                    step_num=step_num,
-                                    step_text=step_text,
-                                    status=status,
-                                    selector_used=selector,
-                                    agent_used=agent,
-                                    confidence=confidence,
-                                    action_type="",
-                                    # screenshot_path=None
-                                )
-                                db.add(step)
-                                saved_count += 1
-                                
-                        except Exception as row_error:
-                            logger.error(f"❌ Failed to parse row {idx} for {execution_id}: {row_error}")
-                            continue
-                    
-                    # 🔥 COMMIT ALL STEPS AT ONCE
-                    db.commit()
-                    logger.info(f"✅ Committed {saved_count} steps for {execution_id}")
-                    
-                    # 🔥 VERIFY - Use execution_id from this function scope
-                    verification = db.query(ExecutionStep).filter(
-                        ExecutionStep.execution_id == execution_id
-                    ).count()
-                    logger.info(f"🔍 Verification: {verification} steps in DB for {execution_id}")
-                    
-                    steps_saved = (verification > 0)
-                else:
-                    logger.error(f"❌ No <table> found in HTML for {execution_id}")
-                    
-            except Exception as e:
-                logger.error(f"❌ Step parsing failed for {execution_id}: {e}")
-                import traceback
-                logger.error(traceback.format_exc())
-
-        # Step 8: Update execution record
-        final_status = "completed" if report_path else "failed"
+        # Step 6: Update execution record
+        final_status = "completed" if steps_saved else "failed"
         db.refresh(execution)
         execution.status = final_status
-        execution.overall_status = overall_status
+        execution.overall_status = overall_status if steps_saved else "FAILED"
         execution.completed_at = datetime.now()
         execution.report_path = report_path
-        execution.script_path = script_path
-        execution.video_path = video_path
-        execution.error_message = None if report_path else "No report generated"
+        execution.error_message = None if steps_saved else f"Subprocess exit code: {result.returncode}"
         db.commit()
         final_status_set = True
 
         logger.info(f"✅ Execution {execution_id} marked as '{final_status}'")
-
-        if steps_saved:
-    # Generate summary
-            service._generate_summary_from_db(execution_id, ticket_id)
-    
-    # 🔥 VERIFY: Summary has step_results
-            summary_path = external_project_path / "Reports" / "summaries" / f"summary_{ticket_id}_latest.json"
-            if summary_path.exists():
-                with open(summary_path, "r", encoding="utf-8") as f:
-                    summary_data = json.load(f)
-        
-                if not summary_data.get("step_results"):
-                    logger.error("❌ Summary missing step_results!")
-                else:
-                    logger.info(f"✅ Summary has {len(summary_data['step_results'])} step_results")
-            else:
-                logger.error(f"❌ Summary file not created at: {summary_path}")
-        else:
-                    logger.warning(
-                        f"Skipping summary generation for {execution_id} because no steps were saved"
-                    )
-# ...existing code...
-
-        logger.info("="*70)
-        logger.info(f"✅ EXECUTION COMPLETED for {execution_id}")
-        logger.info(f"   Status: {final_status} / {overall_status}")
-        logger.info(f"   Report: {report_path}")
         logger.info("="*70)
 
     except Exception as e:
         logger.error(f"❌ EXECUTION FAILED for {execution_id}: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        
+        # 🔥 TRY TO GENERATE SUMMARY EVEN ON ERROR
+        try:
+            steps_file = external_project_path / "Reports" / "steps" / f"steps_{ticket_id}.json"
+            if steps_file.exists():
+                logger.info("🔄 Attempting summary generation despite error...")
+                service._generate_summary_from_db(execution_id, ticket_id)
+        except:
+            pass
+        
         _mark_execution_as_failed(db, execution_id, str(e)[:500], service, ticket_id)
         final_status_set = True
 
@@ -2707,7 +2508,26 @@ def execute_test_in_background(
                 db.commit()
         db.close()
         logger.info(f"🔒 Session closed: {execution_id}\n")
-
+        
+@app.get("/api/execution-summary/{ticket_id}")
+async def get_execution_summary(ticket_id: str):
+    """Get test execution summary (ONLY from plcd_taseq.py summary)"""
+    try:
+        summary_path = Path(settings.external_project_path) / "Reports" / "summaries" / f"summary_{ticket_id}_latest.json"
+        
+        if not summary_path.exists():
+            raise HTTPException(status_code=404, detail="Summary not found")
+        
+        with open(summary_path, 'r', encoding='utf-8') as f:
+            summary = json.load(f)
+        
+        return summary
+    
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Summary file not found")
+    except Exception as e:
+        logger.error(f"Failed to load summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 # ============================================================================
 # RUN SERVER
 # ============================================================================
