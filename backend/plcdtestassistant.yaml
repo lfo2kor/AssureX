@@ -1,0 +1,919 @@
+# ============================================================================
+# TESTING ASSISTANT - COMPLETE CONFIGURATION
+# ============================================================================
+
+# Base Configuration
+base_folder: "C:/AssureX/backend"
+project_id: "plcdtest"
+project_name: "PLCD Test Automation"
+
+# Web Application
+web_url: "http://fe0vm03313.de.bosch.com/rbplcd_t/client/login"
+browser: "edge"
+
+# Login Credentials
+login:
+  username: "mechanic"
+  password: "avalon"
+
+jira:
+  # url: "https://rb-tracker.bosch.com/tracker03"
+  # username: "your-email@domain.com"
+  # api_token: "your-jira-api-token-here"
+  url: https://rb-tracker.bosch.com/tracker03
+  username: Raashi.Bathla@in.bosch.com
+  api_token: jira-api-token
+
+# Wait Times (milliseconds)
+wait_times:
+  after_login: 3000
+  after_navigation: 2000
+  after_click: 1000
+  after_type: 1500
+  after_dropdown: 1500
+  after_save: 3000          # Wait longer after save/submit for success messages
+  page_load: 5000
+
+# Folder Paths (relative to base_folder)
+folders:
+  jira: "Jira_Tickets"
+  reports: "Reports"
+  videos: "Videos"
+  scripts: "Generated_Scripts"
+  generated_scripts: "Generated_Scripts"
+  logs: "Logs"
+  selectors: "Selectors_Folder"
+  screenshots: "Screenshots"
+
+# ============================================================================
+# AZURE OPENAI CONFIGURATION
+# ============================================================================
+azure_openai:
+  api_key: "your-api-key"
+  endpoint: "https://ai2ets.openai.azure.com/"
+  api_version: "2024-02-15-preview"
+  
+  # Model Deployments
+  models:
+    chat: "gpt-4o"                          # For LLM agents
+    embedding: "text-embedding-3-small"     # For semantic search
+    vision: "gpt-4o"                        # For L3 vision agent
+  
+  # Embedding Configuration
+  embedding_config:
+    dimensions: 1536
+    batch_size: 50                          # Batch embed up to 50 items
+    timeout: 30                             # API timeout in seconds
+
+# ============================================================================
+# VECTOR DATABASE CONFIGURATION (ChromaDB)
+# ============================================================================
+vector_database:
+  type: "chromadb"
+  # persist_directory: "./data/chromadb_llm"  # New ChromaDB with LLM conversion
+  persist_directory: "C:/AssureX/backend/data/chromadb_llm"
+  
+  # Collections
+  collections:
+    selectors_base: "selectors_base_collection"
+    runtime_learned: "runtime_learned_collection"
+    learned_insights: "learned_insights_collection"
+  
+  # Distance Metric
+  distance_metric: "cosine"                 # cosine, l2, ip
+
+# ============================================================================
+# SELECTOR CONFIGURATION
+# ============================================================================
+selectors:
+  source_file: "Selectors_Folder/selectors_merged_runtime_fixed.json"
+  total_count: 1340
+  
+  # Embedding Strategy
+  embedding_strategy:
+    # Use LLM to convert technical fields to natural language
+    use_llm_conversion: true
+
+    # Fields to send to LLM for natural language conversion
+    include_fields:
+      - "textContent"      # Visible text on element (e.g., "Runs", "Save")
+      - "ariaLabel"        # Accessibility label
+      - "role"             # Element role (button, link, input)
+      - "tagName"          # HTML tag (button, mat-list-item, etc.)
+      - "module"           # Module/page context
+      - "context"          # Keywords (list or string)
+      - "pageUrl"          # URL pattern (converted to page_context)
+
+    # LLM prompt template for conversion
+    conversion_prompt: |
+      Convert these technical element details into a natural action description.
+
+      Element details:
+      - Text displayed: {textContent}
+      - Element type: {role} {tagName}
+      - Context keywords: {context}
+      - Module: {module}
+      - Page location: {page_context}
+
+      Generate a single natural language sentence (max 15 words) describing what action this element performs.
+      Focus on the user's intent, not technical details.
+
+      Examples:
+      - "Click link to navigate to Teststep runs from sidebar on dashboard page"
+      - "Click button to save changes in Teststep module"
+      - "Type text in search field on projects page"
+
+      Output only the natural language sentence, nothing else.
+
+    # Fields to store as metadata only (NOT in embedding)
+    metadata_fields:
+      - "attr"             # Data attribute name (data-test, data-id)
+      - "value"            # Data attribute value
+      - "full_selector"    # Complete CSS selector (built from attr+value)
+      - "id"               # Unique identifier
+      - "priority"         # Ranking priority
+      - "isDynamic"        # Has dynamic variables
+      - "elementType"      # Element type classification
+    
+ 
+# ============================================================================
+# AGENT 1: SELECTOR DISCOVERY AGENT (L1)
+# ============================================================================
+agent1_selector_discovery:
+  enabled: true
+  
+  # Retrieval Configuration
+  retrieval:
+    n_results: 5                            # Top K candidates
+    confidence_threshold: 0.75              # Execute if >= this
+    retry_threshold: 0.70                   # Try next candidate if >= this
+    max_retries: 3                          # Max candidates to try
+  
+  # Filters
+  filters:
+    use_module_filter: true
+    use_element_type_filter: true
+    use_priority_filter: true
+  
+  # Scoring Weights
+  scoring:
+    semantic_similarity_weight: 0.60
+    module_match_weight: 0.20
+    priority_weight: 0.15
+    context_overlap_weight: 0.05
+  
+  # System Prompt
+  system_prompt: |
+    You are a selector matching expert. Your task is to find the most semantically 
+    similar selector from the knowledge base that matches the test step intent.
+    Prioritize selectors from the current module and with higher priority values.
+    Return confidence score and metadata for downstream decision-making.
+
+# ============================================================================
+# AGENT 2: DOM DISCOVERY AGENT (L1-Extended)
+# ============================================================================
+agent2_dom_discovery:
+  enabled: true
+  
+  # Activation Thresholds
+  activation:
+    min_confidence_from_l1: 0.60            # Activate if L1 returns 0.60-0.75
+    max_confidence_from_l1: 0.75
+  
+  # DOM Extraction
+  dom_extraction:
+    target_elements: ["button", "input", "select", "a", "span", "div[role='button']"]
+    max_elements: 100                       # Limit elements to embed
+    extract_attributes: ["data-*", "id", "name", "aria-*", "class", "role"]
+  
+  # Selector Priority (Higher = More Stable)
+  selector_priority:
+    data_attributes: 100                    # data-*, data-testid
+    aria_attributes: 80                     # aria-label, role
+    id_attributes: 60                       # id with meaningful names
+    name_attributes: 50                     # name attribute
+    class_stable: 40                        # Specific classes
+    text_based: 20                          # :has-text()
+    positional: 10                          # nth-child()
+  
+  # Confidence Boosting
+  confidence_boost:
+    has_data_attr: 0.15
+    has_aria: 0.10
+    text_match_exact: 0.05
+  
+  # Learning Configuration
+  learning:
+    add_to_collection: true                 # Save discovered selectors
+    min_confidence_to_learn: 0.70
+    require_validation: true                # Validate before saving
+  
+  # System Prompt
+  system_prompt: |
+    You are a DOM analysis expert. Extract visible elements from the live page
+    and match them semantically with the test step. Prioritize data-* attributes
+    and stable selectors. Return the best matching element with confidence score.
+  
+  # Extraction Prompt Template
+  extraction_prompt: |
+    Given the test step: "{step_text}"
+    Current module: "{current_module}"
+    
+    Analyze the DOM and identify the most relevant element.
+    Prefer selectors in this order: data-* > aria-* > id > class > text-based
+    
+    Return the selector with confidence score and reasoning.
+
+# ============================================================================
+# AGENT 3: VISION AGENT (L3)
+# ============================================================================
+agent3_vision:
+  enabled: true
+  
+  # Activation Thresholds
+  activation:
+    max_confidence_from_l1: 0.60            # Activate if L1 < 0.60
+    l2_failed: true                         # Also activate if L2 fails
+  
+  # Vision API Configuration
+  vision_api:
+    model: "gpt-4o"
+    max_tokens: 500
+    temperature: 0.1                        # Low temp for deterministic output
+  
+  # Selector Generation
+  selector_generation:
+    max_attempts: 3                         # Try up to 3 generated selectors
+    validation_required: true               # Must validate on page
+    fallback_to_coordinates: false          # Don't use coordinate clicking
+  
+  # System Prompt
+  system_prompt: |
+    You are a UI element locator using computer vision. Analyze the screenshot
+    and identify the element described in the test step. Generate stable CSS
+    or XPath selectors that can reliably locate the element.
+  
+  # Vision Prompt Template
+  vision_prompt: |
+    Screenshot shows a web application page.
+    
+    Test step instruction: "{step_text}"
+    Current module: "{current_module}"
+    
+    Task: Identify the target UI element and suggest the best selector.
+    
+    Prioritize selector stability in this order:
+    1. data-* attributes (most stable)
+    2. aria-* attributes (accessible)
+    3. id attributes (if meaningful)
+    4. class attributes (if specific)
+    5. text-based selectors (least stable)
+    
+    Return a JSON response:
+    {{
+      "element_identified": true/false,
+      "selector_candidates": ["selector1", "selector2", "selector3"],
+      "confidence": 0.0-1.0,
+      "reasoning": "brief explanation"
+    }}
+
+# ============================================================================
+# EXECUTION SETTINGS
+# ============================================================================
+execution:
+  max_retries: 3
+  screenshot_on_every_step: true
+  record_video: true
+  generate_script: true
+  headless: false
+  
+  # Failure Handling
+  failure_handling:
+    fail_fast: true                         # Stop on first failure
+    capture_failure_screenshot: true
+    capture_failure_dom: true
+    log_detailed_error: true
+
+# ============================================================================
+# MODULE CONFIGURATION
+# ============================================================================
+modules:
+  # All valid modules from selector JSON (for validation during setup)
+  known_modules:
+    - "AddExisting"
+    - "AllQuery"
+    - "AttributeGroup"
+    - "AttributeGroups"
+    - "Auth"
+    - "BreadCrumbs"
+    - "BulkOperation"
+    - "CommandBarWithTable"
+    - "Common"
+    - "CreateNew"
+    - "DetailView"
+    - "EntityAttribute"
+    - "EntityList"
+    - "Equipment"
+    - "EquipmentCalendar"
+    - "NestedTree"
+    - "Parts"
+    - "Projects"
+    - "ResultEntry"
+    - "Rfidbookings"
+    - "SearchBar"
+    - "Sequences"
+    - "Shared"
+    - "StatusEdit"
+    - "StatusIcon"
+    - "Tests"
+    - "Teststep"
+    - "Teststeps"
+    - "VisualInvestigation"
+    - "Dashboard"
+  
+  # UI-to-Code Module Mapping (only for modules with different names)
+  module_aliases:
+    Runs: "Teststep"          # UI: "Runs" → Code: "Teststep"
+    Tasks: "Tests"            # UI: "Tasks" → Code: "Tests"
+  
+  # Technical/Component Modules (always include in searches)
+  common_modules:
+    - "Common"
+    - "CommandBarWithTable"
+    - "SearchBar"
+    - "BreadCrumbs"
+    - "Shared"
+    - "EntityAttribute"  # For dropdown options and entity attributes
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+logging:
+  level: "INFO"                             # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Log files
+  files:
+    main_log: "Logs/testing_assistant.log"
+    agent_log: "Logs/agent_execution.log"
+    error_log: "Logs/errors.log"
+  
+  # What to log
+  log_embeddings: false                     # Log embedding vectors (verbose)
+  log_similarity_scores: true
+  log_agent_decisions: true
+  log_selector_attempts: true
+
+# ============================================================================
+# PERFORMANCE TUNING
+# ============================================================================
+performance:
+  # Caching
+  cache_embeddings: true
+  cache_dom_snapshots: false
+  
+  # Timeouts
+  page_load_timeout: 30000                  # 30 seconds
+  element_wait_timeout: 10000               # 10 seconds
+  api_call_timeout: 30                      # 30 seconds
+  
+  # Rate Limiting
+  max_api_calls_per_minute: 60
+  batch_api_calls: true
+
+# ============================================================================
+# REPORTING
+# ============================================================================
+reporting:
+  format: "html"                            # html, json, both
+  include_screenshots: true
+  include_video_link: true
+  include_script_link: true
+  include_confidence_scores: true
+  include_agent_chain: true                 # Show L1->L2->L3 path
+
+# ============================================================================
+# FEATURE FLAGS
+# ============================================================================
+features:
+  enable_learning: true                     # Learn from successful executions
+  enable_context_tracking: true            # Track sequential context
+  enable_module_detection: true            # Auto-detect current module
+  enable_multi_agent: true                 # Use all 3 agents
+  enable_vision_fallback: true             # Use L3 vision agent
+  enable_sequential_context: true          # NEW: Sequential context tracking
+  enable_llm_jira_parsing: true            # NEW: LLM-based Jira parsing
+  enable_multi_agent_orchestration: true   # NEW: Orchestrator agent
+  enable_continuous_learning: true         # NEW: Learn from failures
+
+# ============================================================================
+# GENERATED TEST SCRIPTS CONFIGURATION
+# ============================================================================
+generated_scripts:
+  enabled: true
+  
+  # Script Format
+  format: "python"                          # Options: python, typescript
+  extension: ".py"                          # Auto-set based on format
+  
+  # File Naming
+  naming_pattern: "{ticket_id}_{module}_{timestamp}"
+  include_timestamp: true
+  
+  # Framework Configuration
+  framework:
+    python:
+      library: "playwright"                 # playwright, selenium
+      test_runner: "pytest"                 # pytest, unittest
+      template: "templates/playwright_test_template.py"
+    typescript:
+      library: "playwright"
+      test_runner: "playwright-test"
+      template: "templates/playwright_test_template.spec.ts"
+  
+  # Script Content
+  include_in_script:
+    selectors_used: true                    # Actual selectors executed
+    wait_times: true                        # Wait commands used
+    assertions: true                        # Verification steps
+    comments: true                          # Step descriptions from Jira
+    confidence_scores: false                # L1/L2/L3 metadata (debug only)
+  
+  # Storage & Organization
+  storage:
+    base_folder: "Generated_Scripts"
+    organize_by_module: true                # Create subfolders per module
+    organize_by_date: false
+    max_versions_per_ticket: 5              # Keep last 5 versions
+  
+  # Execution Settings
+  execution:
+    auto_validate: true                     # Run generated script once to verify
+    add_to_regression_suite: true           # Add to regression test collection
+    mark_as_stable_after_runs: 3            # Mark stable after 3 successful runs
+
+# ============================================================================
+# SEQUENTIAL CONTEXT TRACKING - LANGGRAPH AGENTS (NEW)
+# ============================================================================
+
+agents:
+  # -------------------------------------------------------------------------
+  # OrchestratorAgent - Supervisor
+  # -------------------------------------------------------------------------
+  orchestrator_agent:
+    enabled: true
+    model: "gpt-4o"
+    temperature: 0.1
+    max_tokens: 1000
+
+    system_prompt: |
+      You are the Test Execution Orchestrator. Route to appropriate agents based on state.
+
+      AGENTS AVAILABLE:
+      - JiraAgent: Parse ticket (call once at start)
+      - ContextAgent: Capture/update context (before/after each step)
+      - LearningAgent: Check past failures/corrections (before selector discovery)
+      - SelectorAgent_L1: RAG search with LLM validation (try first)
+      - SelectorAgent_L2: DOM discovery with LLM analysis (if L1 conf < 0.70)
+      - SelectorAgent_L3: Vision-based identification (if L1/L2 fail)
+
+      ROUTING RULES:
+      1. Always check LearningAgent first for high-confidence corrections
+      2. If found correction with conf > 0.90: execute directly
+      3. Otherwise: L1 → (if conf < 0.70) → L2 → (if fail) → L3
+      4. After each action: Update ContextAgent
+      5. After failures: Store to LearningAgent
+
+      Return JSON: {"next_agent": "...", "reasoning": "...", "skip": [...]}
+
+  # -------------------------------------------------------------------------
+  # JiraAgent - LLM-Based Ticket Parsing
+  # -------------------------------------------------------------------------
+  # jira_agent:
+  #   enabled: true
+  #   model: "gpt-4o"
+  #   temperature: 0.1
+  #   max_tokens: 2000
+
+  #   system_prompt: |
+  #     You are a Jira ticket parser. Extract test steps from any ticket format.
+  #     Parse ticket text and identify: module, test steps, expected results.
+  #     Handle various formats (numbered lists, tables, bullet points).
+
+  #     OUTPUT FORMAT:
+  #     {
+  #       "ticket_id": "RBPLCD-XXXX",
+  #       "title": "...",
+  #       "module": "Teststep",
+  #       "steps": [
+  #         {"number": 1, "text": "Login", "expected": "Dashboard visible"}
+  #       ]
+  #     }
+
+  #   format_examples: |
+  #     Format 1: "1. Login to app\nExpected: Dashboard loads"
+  #     Format 2: "Step 1: Navigate | Expected: List shown"
+
+
+  # -------------------------------------------------------------------------
+# JiraAgent - LLM-Based Ticket Parsing with Few-Shot Prompting
+# -------------------------------------------------------------------------
+jira_agent:
+  enabled: true
+  model: "gpt-4o"
+  temperature: 0.1
+  max_tokens: 3000
+
+  system_prompt: |
+    You are an expert Jira ticket parser for test automation. Your task is to:
+    1. Extract test steps from Jira tickets in ANY format
+    2. Normalize steps into a consistent numbered structure
+    3. Detect the module from context keywords (Teststep, Tests, Equipment, etc.)
+    4. Extract expected results from acceptance criteria
+    5. ALWAYS add "Login" as step 1 if not explicitly mentioned
+    6. If module is not explicitly mentioned, infer it from navigation steps (e.g., "Navigate to teststep" → module = "Teststep")
+
+    IMPORTANT RULES:
+    - MANDATORY: First step MUST always be "Login" (add if missing)
+    - Convert arrow notation (→) to numbered steps
+    - Parse unstructured paragraphs with "then", commas into discrete steps
+    - Remove filler words: "then", "and", "also", "after that"
+    - Merge short actions into single steps when logical
+    - Extract expected results from "Acceptance Criteria" or inline expectations
+    - MODULE DETECTION:
+      * Check for explicit module mentions in title/description
+      * If not found, look for "Navigate to X" or "Go to X" patterns
+      * Extract X as the module name (e.g., "Navigate to runs" → module = "Teststep")
+      * Map UI names to code names: "runs" → "Teststep", "tasks" → "Tests"
+      * Default to "Common" if no clear module found
+
+    OUTPUT FORMAT (strict JSON):
+    {
+      "ticket_id": "RBPLCD-XXXX",
+      "title": "exact ticket title",
+      "module": "Teststep|Tests|Equipment|...",
+      "steps": [
+        {
+          "number": 1,
+          "text": "Login",
+          "expected": null
+        },
+        {
+          "number": 2,
+          "text": "clear action description",
+          "expected": "expected result or null"
+        }
+      ]
+    }
+
+    CRITICAL RULES:
+    - Use "steps" NOT "test_steps"
+    - Use "number" NOT "step_number"
+    - Use "text" NOT "description" or "action"
+    - Always include "title" and "module"
+    - First step MUST be "Login"
+    - Return VALID JSON ONLY. Use exact keys: ticket_id, title, module, steps (array). Each step: number, text, expected (null if none). No surrounding text.
+
+  # =========================================================================
+  # FEW-SHOT EXAMPLES
+  # =========================================================================
+  format_examples: |
+    ---
+    EXAMPLE 1: Numbered List Format with Explicit Module
+    ---
+    INPUT:
+    Ticket ID: RBPLCD-8835
+    Title: edit part details
+    Description:
+    Problem Description:
+    editing details for parts from teststep is not working
+
+    Steps to Reproduce:
+    1. Login
+    2. navigate to teststep
+    3. click on default_Measurement01
+    4. open parts accordion
+    5. click on edit button of default_testobject_01
+    6. clear whatever is written inside tagID and write 5
+    7. click on save
+    8. "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+    9. click on edit button of default_testobject_01 again
+    10. clear tagID
+    11. save again
+
+    Acceptance Criteria:
+    "Successfully edited: 'TestObject' default_testobject_01" message should be displayed
+
+    OUTPUT:
+    {
+      "ticket_id": "RBPLCD-8835",
+      "title": "edit part details",
+      "module": "Teststep",
+      "steps": [
+        {"number": 1, "text": "Login", "expected": null},
+        {"number": 2, "text": "Navigate to teststep", "expected": null},
+        {"number": 3, "text": "Click on default_Measurement01", "expected": null},
+        {"number": 4, "text": "Open parts accordion", "expected": null},
+        {"number": 5, "text": "Click on edit button of default_testobject_01", "expected": null},
+        {"number": 6, "text": "Clear tagID and write 5", "expected": null},
+        {"number": 7, "text": "Click on save", "expected": "Successfully edited: 'TestObject' default_testobject_01 message should be displayed"},
+        {"number": 8, "text": "Click on edit button of default_testobject_01 again", "expected": null},
+        {"number": 9, "text": "Clear tagID", "expected": null},
+        {"number": 10, "text": "Click on save", "expected": "Successfully edited: 'TestObject' default_testobject_01 message should be displayed"}
+      ]
+    }
+
+    ---
+    EXAMPLE 2: Arrow Notation Format - Module Inferred from Navigation
+    ---
+    INPUT:
+    Ticket ID: RBPLCD-8859
+    Title: Product filter is not working as expected
+    Description:
+    Problem Description:
+    When attempting to apply the product filter, clicking Cancel does not discard the action; instead, the filter is still applied.
+
+    Steps to Reproduce:
+    Navigate to tasks → click on product filter → click on any product → click cancel
+
+    OUTPUT:
+    {
+      "ticket_id": "RBPLCD-8859",
+      "title": "Product filter is not working as expected",
+      "module": "Tests",
+      "steps": [
+        {"number": 1, "text": "Login", "expected": null},
+        {"number": 2, "text": "Navigate to tasks", "expected": null},
+        {"number": 3, "text": "Click on product filter", "expected": null},
+        {"number": 4, "text": "Click on any product", "expected": null},
+        {"number": 5, "text": "Click cancel", "expected": "Filter should not be applied"}
+      ]
+    }
+
+    ---
+    EXAMPLE 3: Unstructured Paragraph Format - Module from "Navigate to runs"
+    ---
+    INPUT:
+    Ticket ID: RBPLCD-8955
+    Title: Unable to add external reference in details view of teststep
+    Description:
+    Problem Description:
+    Unable to add external reference in details view of teststep
+
+    Steps to Reproduce:
+    Navigate to runs then click on default_Measurement01 to open details view, then click on external reference accordion and click on add button, then click on Description and type External, then click on Url and type Reference, then click on save button
+
+    Acceptance Criteria:
+    "Successfully edited: 'TestStep' default_Measurement01" should be displayed after clicking on save button.
+
+    OUTPUT:
+    {
+      "ticket_id": "RBPLCD-8955",
+      "title": "Unable to add external reference in details view of teststep",
+      "module": "Teststep",
+      "steps": [
+        {"number": 1, "text": "Login", "expected": null},
+        {"number": 2, "text": "Navigate to runs", "expected": null},
+        {"number": 3, "text": "Click on default_Measurement01 to open details view", "expected": null},
+        {"number": 4, "text": "Click on external reference accordion", "expected": null},
+        {"number": 5, "text": "Click on add button", "expected": null},
+        {"number": 6, "text": "Click on Description and type External", "expected": null},
+        {"number": 7, "text": "Click on Url and type Reference", "expected": null},
+        {"number": 8, "text": "Click on save button", "expected": "Successfully edited: 'TestStep' default_Measurement01 message should be displayed"}
+      ]
+    }
+
+    ---
+    EXAMPLE 4: No Login Step Mentioned - Must Add as Step 1
+    ---
+    INPUT:
+    Ticket ID: RBPLCD-9001
+    Title: Create new project
+    Description:
+    Steps to Reproduce:
+    Navigate to projects → click Create New button → enter project name → click Save
+
+    OUTPUT:
+    {
+      "ticket_id": "RBPLCD-9001",
+      "title": "Create new project",
+      "module": "Projects",
+      "steps": [
+        {"number": 1, "text": "Login", "expected": null},
+        {"number": 2, "text": "Navigate to projects", "expected": null},
+        {"number": 3, "text": "Click Create New button", "expected": null},
+        {"number": 4, "text": "Enter project name", "expected": null},
+        {"number": 5, "text": "Click Save", "expected": "Project created successfully"}
+      ]
+    }
+
+    ---
+    END OF EXAMPLES
+    ---
+
+  # =========================================================================
+  # MODULE DETECTION KEYWORDS
+  # =========================================================================
+  module_detection:
+    # Navigation patterns to extract module from (case-insensitive)
+    navigation_patterns:
+      - "navigate to {module}"
+      - "go to {module}"
+      - "open {module}"
+      - "access {module}"
+      - "click on {module}"
+    
+    # UI name → Code name mapping
+    ui_to_code_mapping:
+      runs: "Teststep"
+      teststep: "Teststep"
+      tasks: "Tests"
+      tests: "Tests"
+      equipment: "Equipment"
+      projects: "Projects"
+      dashboard: "Dashboard"
+      sequences: "Sequences"
+    
+    # Keyword-based detection (fallback)
+    keywords:
+      Teststep:
+        - "runs"
+        - "teststep"
+        - "measurement"
+        - "default_Measurement"
+      Tests:
+        - "tasks"
+        - "tests"
+        - "task"
+      Equipment:
+        - "equipment"
+        - "testobject"
+        - "parts"
+      Projects:
+        - "projects"
+        - "project"
+      Auth:
+        - "login"
+        - "logout"
+        - "authentication"
+      Dashboard:
+        - "dashboard"
+        - "home"
+    
+    # Default module if detection fails
+    default_module: "Common"
+
+  # =========================================================================
+  # PARSING CONFIGURATION
+  # =========================================================================
+  parsing:
+    always_add_login: true                  # MANDATORY: Add "Login" as step 1 if missing
+    remove_filler_words: true               # Remove "then", "and", "also"
+    merge_short_steps: false                # Keep all steps discrete
+    extract_from_acceptance_criteria: true  # Look for expectations in AC
+    infer_module_from_navigation: true      # NEW: Extract module from "Navigate to X"
+    
+    filler_words:
+      - "then"
+      - "and"
+      - "also"
+      - "after that"
+      - "next"
+      - "afterwards"
+    
+    arrow_notations:
+      - "→"
+      - "->"
+      - ">"
+    
+    expected_keywords:
+      - "expected"
+      - "should be"
+      - "message should"
+      - "acceptance criteria"
+      - "result"
+
+  # =========================================================================
+  # VALIDATION
+  # =========================================================================
+  validation:
+    min_steps: 2                            # At least 2 steps (Login + 1 action)
+    max_steps: 50                           # Sanity check
+    require_module: true                    # Module must be detected
+    require_ticket_id: true
+    require_login_step: true                # NEW: First step MUST be Login
+
+  # -------------------------------------------------------------------------
+  # ContextAgent - Execution Context Tracking
+  # -------------------------------------------------------------------------
+  context_agent:
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0
+    max_tokens: 500
+
+    system_prompt: |
+      Track execution context. Extract: current_url, visible_data_attributes, last_action.
+      Generate context summary for selector agents.
+
+  # -------------------------------------------------------------------------
+  # LearningAgent - Continuous Learning
+  # -------------------------------------------------------------------------
+  learning_agent:
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.1
+    max_tokens: 1000
+
+    system_prompt: |
+      Learn from failures and human corrections.
+      Query memory for similar contexts and suggest high-confidence corrections.
+
+  # -------------------------------------------------------------------------
+  # SelectorAgent_L1 - RAG + LLM
+  # -------------------------------------------------------------------------
+  selector_agent_l1:
+    enabled: true
+    model: "gpt-4o"
+    temperature: 0.2
+    max_tokens: 1000
+    confidence_threshold: 0.75
+    retry_threshold: 0.70
+
+  # -------------------------------------------------------------------------
+  # SelectorAgent_L2 - DOM + LLM
+  # -------------------------------------------------------------------------
+  selector_agent_l2:
+    enabled: true
+    model: "gpt-4o"
+    temperature: 0.2
+    max_tokens: 1500
+    activation_threshold: 0.70
+
+  # -------------------------------------------------------------------------
+  # SelectorAgent_L3 - Vision
+  # -------------------------------------------------------------------------
+  selector_agent_l3:
+    enabled: true
+    model: "gpt-4o"
+    temperature: 0.1
+    max_tokens: 1000
+
+# ============================================================================
+# MEMORY CONFIGURATION (NEW)
+# ============================================================================
+
+memory:
+  # Context Agent - Recent execution history
+  context_agent:
+    type: "short_term"
+    retention_steps: 10
+    retention_strategy: "sliding_window"
+
+  # Learning Agent - Persistent learning
+  learning_agent:
+    type: "long_term"
+    storage: "chromadb:learning_collection"
+    max_patterns: 1000
+    similarity_threshold: 0.85
+
+  # Selector Agents - Per-step attempts
+  selector_agents:
+    type: "session"
+    retention_steps: 3
+    clear_on_success: true
+    store_reasoning: true
+
+  # Orchestrator - Full test run
+  orchestrator:
+    type: "full_session"
+    max_steps: 100
+
+# ============================================================================
+# LANGGRAPH WORKFLOW (NEW)
+# ============================================================================
+
+langgraph:
+  workflow:
+    max_iterations: 200
+    timeout_seconds: 600
+
+# ============================================================================
+# ARTIFACTS (NEW)
+# ============================================================================
+
+artifacts:
+  video_recording:
+    enabled: true
+    format: "webm"
+    quality: "medium"
+    path: "Videos/{ticket_id}_{timestamp}.webm"
+
+  script_generation:
+    enabled: true
+    include_context_checks: true
+
+  report_generation:
+    include_context_trace: true
+    include_agent_decisions: true
+    include_llm_reasoning: true
