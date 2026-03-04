@@ -3298,7 +3298,7 @@ def main():
 
 
 def load_selector_corrections(ticket_id, step_number, step_text):
-    feedback_dir = Path("C:/Idea Projects/AI_Test_Assist/insights/pending")
+    feedback_dir = Path("C:/AssureX/backend/insights/pending")
     for file in feedback_dir.glob(f"{ticket_id}_step{step_number}_*.json"):
         with open(file, "r", encoding="utf-8") as f:
             data = json.load(f)
