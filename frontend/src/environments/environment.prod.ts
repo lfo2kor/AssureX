@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://your-production-api-url.com'
+  apiUrl: window.location.origin + ':8000'
 };

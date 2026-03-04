@@ -44,12 +44,12 @@
                 {
                   "type": "initial",
                   "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumError": "3MB"
                 },
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumError": "50kB"
                 }
               ],
               "outputHashing": "all"
@@ -98,9 +98,10 @@
               }
             ],
             "styles": [
+              "node_modules/@bosch/frontend.kit-npm/dist/frontend-kit-complete.css",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [ "node_modules/@bosch/frontend.kit-npm/dist/frontend-kit.js"]
           }
         }
       }

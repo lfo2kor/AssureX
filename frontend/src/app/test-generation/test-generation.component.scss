@@ -1626,7 +1626,86 @@ mat-icon {
   flex-shrink: 0;
 }
 
-/* Enhanced Run Button */
+// 🔥 NEW: Error message box styling
+.error-message-box {
+  margin-top: 12px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  background-color: #fff3e0;
+  border-left: 5px solid #ff9800;
+  border: 1px solid #ffe0b2;
+}
+
+.error-message-box .error-content {
+  color: #e65100;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error-message-box .error-content strong {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #d84315;
+}
+
+.error-message-box .error-content p {
+  margin: 0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+// 🔥 NEW: Video Player Styling
+.video-player-container {
+  margin: 20px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  border: 2px solid #333;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: #000;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.video-player {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  background-color: #000;
+  display: block;
+  max-width: 100%;
+}
+
+.video-player::-webkit-media-controls {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.video-info {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 8px 0 0 0;
+  padding: 0;
+  text-align: center;
+  font-weight: 500;
+}
+
+.video-debug {
+  color: #fbbf24;
+  font-size: 12px;
+  margin: 4px 0 0 0;
+  padding: 0;
+  text-align: center;
+  font-style: italic;
+}
+
+// Enhanced Run Button */
 .run-btn {
   display: inline-flex;
   align-items: center;

@@ -91,7 +91,7 @@ class Feedback(BaseModel):
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["*"],  # In production, specify exact origins
-    allow_origins=["http://localhost:4200"],  # Angular dev server
+    allow_origins=["http://localhost:4200", "http://si0vm10371.de.bosch.com"],  # Angular dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -171,6 +171,17 @@ async def execute_test(
         description = fields.get("description", "")
 
         logger.info(f"✅ Fetched from Jira: {summary}")
+
+        # 🔥 VALIDATION: Check if description exists and is not empty
+        if not description or (isinstance(description, str) and not description.strip()):
+            error_msg = f"No description available for Jira ticket '{ticket_id}'. Please add test steps/description in Jira before executing."
+            logger.warning(f"⚠️  {error_msg}")
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
+
+        logger.info(f"✅ Description present: {len(description)} characters")
 
         # Create execution record (optional - can be removed if you don't want ANY database)
         service = TestExecutionService(db)
@@ -518,7 +529,14 @@ def rerun_test_in_background(
 
         # Parse overall status from report if available
         overall_status = "UNKNOWN"
-        if report_path and Path(report_path).exists():
+        
+        # 🔥 FIX: Calculate overall_status from steps (more reliable than parsing HTML)
+        if steps_saved and raw_steps:
+            overall_status = "FAILED" if any(
+                s.get("status") == "FAILED" for s in raw_steps
+            ) else "PASSED"
+            logger.info(f"✅ Calculated overall_status from steps: {overall_status}")
+        elif report_path and Path(report_path).exists():
             try:
                 with open(report_path, 'r', encoding='utf-8') as f:
                     html_content = f.read()
@@ -1410,35 +1428,108 @@ def download_playwright_script(execution_id: str, db: Session = Depends(get_db))
 def download_test_video(execution_id: str, db: Session = Depends(get_db)):
     """
     Download the test execution video for a completed execution
+    Supports HTTP Range requests for video streaming
     """
     execution = db.query(TestExecution).filter(
         TestExecution.execution_id == execution_id
     ).first()
 
     if not execution:
+        logger.error(f"❌ Video: Execution {execution_id} not found")
         raise HTTPException(status_code=404, detail="Execution not found")
 
     if not execution.video_path:
+        logger.error(f"❌ Video: No video_path for {execution_id}")
         raise HTTPException(
             status_code=400,
             detail="Video not generated yet. Please wait for test completion."
         )
 
     video_path = Path(execution.video_path)
-
+    
+    logger.info(f"🎬 Video request: {execution_id}")
+    logger.info(f"   Path: {video_path}")
+    logger.info(f"   Exists: {video_path.exists()}")
+    
     if not video_path.exists():
+        logger.error(f"❌ Video file not found: {video_path}")
         raise HTTPException(
             status_code=404,
             detail=f"Video file not found at: {execution.video_path}"
         )
 
-    logger.info(f"📥 Serving video: {video_path.name}")
+    # Get file size
+    file_size = video_path.stat().st_size
+    logger.info(f"   Size: {file_size} bytes")
+    logger.info(f"   Extension: {video_path.suffix}")
 
+    # 🔥 FIX: Use streaming with proper headers
     return FileResponse(
         path=str(video_path),
-        media_type="video/webm",
-        filename=f"{execution.ticket_id}_video.webm"
+        media_type="video/webm; codecs=\"vp8, vorbis\"",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "public, max-age=3600",
+            "Content-Length": str(file_size),
+            "Content-Disposition": f"inline; filename=\"{execution.ticket_id}_video.webm\"",
+            "X-Content-Type-Options": "nosniff"
+        }
     )
+
+# 🔥 NEW: DEBUG ENDPOINT FOR VIDEO ISSUES
+@app.get("/api/debug/video/{execution_id}")
+def debug_video(execution_id: str, db: Session = Depends(get_db)):
+    """
+    Debug video file for a completed execution
+    """
+    execution = db.query(TestExecution).filter(
+        TestExecution.execution_id == execution_id
+    ).first()
+
+    result = {
+        "execution_id": execution_id,
+        "found": False,
+        "video_path": None,
+        "file_exists": False,
+        "file_size": 0,
+        "file_readable": False,
+        "warnings": []
+    }
+
+    if not execution:
+        result["warnings"].append("Execution not found in database")
+        return result
+
+    result["found"] = True
+    result["video_path"] = execution.video_path
+
+    if not execution.video_path:
+        result["warnings"].append("No video_path set on execution record")
+        return result
+
+    video_path = Path(execution.video_path)
+    result["file_exists"] = video_path.exists()
+
+    if not video_path.exists():
+        result["warnings"].append(f"Video file not found at: {video_path}")
+        return result
+
+    try:
+        stat = video_path.stat()
+        result["file_size"] = stat.st_size
+        result["file_readable"] = os.access(video_path, os.R_OK)
+        result["created_at"] = stat.st_ctime
+        result["modified_at"] = stat.st_mtime
+        
+        if stat.st_size == 0:
+            result["warnings"].append("⚠️ Video file is 0 bytes (empty)!")
+        else:
+            result["warnings"].append(f"✅ Video file is {stat.st_size} bytes")
+            
+    except Exception as e:
+        result["warnings"].append(f"Error reading file stats: {e}")
+
+    return result
 
 # Add these debug endpoints to your main.py after the other endpoints
 
@@ -2312,7 +2403,7 @@ def save_steps(
     db.commit()
     return {"saved": saved_count}
 
-logger.error("🔥 execute_test_in_background CALLED")
+logger.info("execute_test_in_background CALLED")
 
 def execute_test_in_background(
     execution_id: str,
@@ -2442,6 +2533,9 @@ def execute_test_in_background(
         overall_status = "UNKNOWN"
 
         reports_folder = external_project_path / "Reports"
+        scripts_folder = external_project_path / "Generated_Scripts"
+        videos_folder = external_project_path / "Videos"
+        
         if reports_folder.exists():
             reports = sorted(
                 reports_folder.glob(f"*{ticket_id}*.html"),
@@ -2451,6 +2545,28 @@ def execute_test_in_background(
             if reports:
                 report_path = str(reports[0])
                 logger.info(f"📄 Found report: {reports[0].name}")
+
+        # 🔥 NEW: Find script for this ticket
+        if scripts_folder.exists():
+            scripts = sorted(
+                scripts_folder.glob(f"*{ticket_id}*.py"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True
+            )
+            if scripts:
+                script_path = str(scripts[0])
+                logger.info(f"📜 Found script: {scripts[0].name}")
+
+        # 🔥 NEW: Find latest video
+        if videos_folder.exists():
+            videos = sorted(
+                videos_folder.glob("*.webm"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True
+            )
+            if videos:
+                video_path = str(videos[0])
+                logger.info(f"🎥 Found video: {videos[0].name}")
 
         # Parse overall status from report
         if report_path and Path(report_path).exists():
@@ -2472,6 +2588,8 @@ def execute_test_in_background(
         execution.overall_status = overall_status if steps_saved else "FAILED"
         execution.completed_at = datetime.now()
         execution.report_path = report_path
+        execution.script_path = script_path
+        execution.video_path = video_path
         execution.error_message = None if steps_saved else f"Subprocess exit code: {result.returncode}"
         db.commit()
         final_status_set = True

@@ -6,8 +6,9 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class JiraService {
-  private apiUrl = 'http://localhost:8000/jira';
-
+  // private apiUrl = 'http://localhost:8000/jira';
+// private apiUrl = `${window.location.origin}/jira`;
+private apiUrl = '/api/jira';
   constructor(private http: HttpClient) {}
 
   getTicket(ticketId: string): Observable<any> {

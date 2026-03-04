@@ -84,6 +84,8 @@ overallFeedbackSubmitted: boolean = false;
 
   private pollingSubscription?: Subscription;
 
+  isVideoLoaded: boolean = false; 
+
   @ViewChild('chatContainer') chatContainer!: ElementRef;
   @ViewChild('messageTextarea') messageTextarea!: ElementRef;
 
@@ -249,7 +251,23 @@ private pollExecutionStatus(executionId: string, message: ChatMessage) {
         message.reportGenerated = true;
         message.reportPath = status.report_path;
         message.scriptPath = status.script_path;
-        message.videoPath = status.video_path;
+        
+        // 🔥 NEW: Convert video path to playable URL with proper base URL
+        if (status.video_path) {
+          // Use window.location to get the full base URL for video streaming
+          const baseUrl = `${window.location.protocol}//${window.location.host}`;
+          message.videoPath = `${baseUrl}/api/download-video/${message.executionId}`;
+          console.log('🎬 Video URL configured:', {
+            protocol: window.location.protocol,
+            host: window.location.host,
+            baseUrl: baseUrl,
+            executionId: message.executionId,
+            finalUrl: message.videoPath,
+            videoExists: !!status.video_path
+          });
+        } else {
+          console.warn('⚠️ No video_path in status:', status);
+        }
 
         message.generatedFiles = [
           status.report_path,
@@ -535,7 +553,7 @@ if (!feedbackText) {
       console.log(`✅ Submitted ${feedbackPromises.length} feedback entries to backend`);
 
       // 🔥 STEP 3: NOW trigger rerun with feedback
-      this.http.post<any>('http://localhost:8000/api/rerun-with-feedback', {
+      this.http.post<any>(`${window.location.origin}/api/rerun-with-feedback`, {
         ticket_id: message.ticketDetails!.ticket_id,
         // feedback_text: (message.consolidatedFeedback ?? '').trim()
         feedback_text: message.consolidatedFeedback!.trim()
@@ -616,7 +634,7 @@ rerunTestWithFeedback(message: any) {
     feedback_text: feedbackText
   });
 
-  this.http.post('http://localhost:8000/api/rerun-with-feedback', {
+  this.http.post(`${window.location.origin}/api/rerun-with-feedback`, {
     ticket_id: ticketId,
     feedback_text: feedbackText
   }).subscribe({
@@ -738,7 +756,7 @@ submitOverallFeedback(message: any) {
   }
 
   // Send feedback to backend
-  this.http.post<any>('http://localhost:8000/api/rerun-with-feedback', {
+  this.http.post<any>(`${window.location.origin}/api/rerun-with-feedback`, {
     ticket_id: message.ticketDetails.ticket_id,
     feedback_text: message.userFeedback.trim()
   }).subscribe({
@@ -780,7 +798,7 @@ submitOverallFeedback(message: any) {
           // Create bot message with both Jira data AND script info
           const botMessage: ChatMessage = {
             type: 'bot',
-            text: `✅ Found JIRA ticket: ${data.ticket_id}\n\n📋 Title: ${data.title}\n📦 Module: ${data.module || 'N/A'}\n\n🔢 Test Steps: ${data.steps?.length || 0}\n\nDo you want to run the automated test?`,
+            text: `✅ Found JIRA ticket: ${data.ticket_id}\n\n📋 Title: ${data.title}\n📦 Module: ${data.module || 'N/A'}\n\n🔢 Test Steps: ${data.steps?.length || 0}\n\n${hasScripts ? '🚀 Script found! Starting test rerun...' : 'Do you want to run the automated test?'}`,
             timestamp: new Date(),
             ticketDetails: {
               ticket_id: data.ticket_id,
@@ -789,7 +807,7 @@ submitOverallFeedback(message: any) {
               module: data.module,
               steps: data.steps
             } as TicketDetail,
-            waitingForConfirmation: true,
+            waitingForConfirmation: !hasScripts,  // 🔥 Only wait if NO scripts exist
             // 🔥 ADD SCRIPT INFORMATION
             hasExistingScripts: hasScripts,
             scriptsCount: scriptsResponse.scripts_count
@@ -797,6 +815,19 @@ submitOverallFeedback(message: any) {
 
           this.currentChatMessages.push(botMessage);
           this.saveChatToHistory();
+
+          // 🔥 AUTO-TRIGGER BASED ON SCRIPT AVAILABILITY
+          if (hasScripts) {
+            console.log('✅ Scripts found! Auto-triggering rerun...');
+            setTimeout(() => {
+              this.rerunTest(data.ticket_id);
+            }, 1000);  // Small delay for UX
+          } else {
+            console.log('📝 No scripts found! Auto-triggering generate and run...');
+            setTimeout(() => {
+              this.runTest(data.ticket_id);
+            }, 1000);  // Small delay for UX
+          }
         },
         error: (scriptError) => {
           // 🔥 GRACEFUL FALLBACK: If script check fails, continue without script info
@@ -807,7 +838,7 @@ submitOverallFeedback(message: any) {
 
           const botMessage: ChatMessage = {
             type: 'bot',
-            text: `✅ Found JIRA ticket: ${data.ticket_id}\n\n📋 Title: ${data.title}\n📦 Module: ${data.module || 'N/A'}\n\n🔢 Test Steps: ${data.steps?.length || 0}\n\nDo you want to run the automated test?`,
+            text: `✅ Found JIRA ticket: ${data.ticket_id}\n\n📋 Title: ${data.title}\n📦 Module: ${data.module || 'N/A'}\n\n🔢 Test Steps: ${data.steps?.length || 0}\n\n🚀 Starting test generation and run...`,
             timestamp: new Date(),
             ticketDetails: {
               ticket_id: data.ticket_id,
@@ -816,7 +847,7 @@ submitOverallFeedback(message: any) {
               module: data.module,
               steps: data.steps
             } as TicketDetail,
-            waitingForConfirmation: true,
+            waitingForConfirmation: false,  // 🔥 No confirmation needed - auto-trigger
             // 🔥 DEFAULT TO NO SCRIPTS IF CHECK FAILS
             hasExistingScripts: false,
             scriptsCount: 0
@@ -824,6 +855,12 @@ submitOverallFeedback(message: any) {
 
           this.currentChatMessages.push(botMessage);
           this.saveChatToHistory();
+
+          // 🔥 AUTO-TRIGGER GENERATE AND RUN (since we couldn't check for scripts)
+          console.log('📝 Script check failed! Auto-triggering generate and run...');
+          setTimeout(() => {
+            this.runTest(data.ticket_id);
+          }, 1000);  // Small delay for UX
         }
       });
     },
@@ -1020,6 +1057,29 @@ submitOverallFeedback(message: any) {
         alert('❌ Failed to download video. Please check if the video was recorded.');
       }
     });
+  }
+
+  // 🔥 NEW: Video event handlers
+  onVideoLoadStart(event: any) {
+    console.log('🎬 Video: loadstart event');
+    this.isVideoLoaded = false;
+  }
+
+  onVideoCanPlay(event: any) {
+    console.log('🎬 Video: canplay event - video loaded successfully!');
+    this.isVideoLoaded = true;
+  }
+
+  onVideoError(event: any) {
+    const video = event.target;
+    console.error('❌ Video: error event', {
+      error: video.error?.code,
+      message: video.error?.message,
+      src: video.src,
+      currentSrc: video.currentSrc
+    });
+    this.isVideoLoaded = false;
+    alert('❌ Failed to load video. Check browser console for details.');
   }
 
   hasPlaywrightScript(): boolean {

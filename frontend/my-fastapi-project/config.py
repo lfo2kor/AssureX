@@ -42,13 +42,13 @@ class Settings(BaseSettings):
     logs_folder: str = "Logs"
 
 # Add these fields for Azure OpenAI and Jira
-    azure_openai_api_key: str = ""
-    azure_openai_endpoint: str = ""
-    azure_openai_deployment: str = ""
-    azure_openai_api_version: str = ""
-    jira_base_url: str = ""
-    jira_email: str = ""
-    jira_api_token: str = ""
+    azure_openai_api_key: str = "98dkVOUDLG4wm9OCmF8pxnR48BoUCPYKzfI9p4zYGP5uVh7TiLLwJQQJ99BDAC5RqLJXJ3w3AAABACOGWUeW"
+    azure_openai_endpoint: str = "https://ai2ets.openai.azure.com/"
+    azure_openai_deployment: str = "gpt-4o"
+    azure_openai_api_version: str = "2024-02-15-preview"
+    jira_base_url: str = "https://rb-tracker.bosch.com/tracker03"
+    jira_email: str = "YOUR_JIRA_EMAIL"
+    jira_api_token: str = "YOUR_JIRA_API_TOKEN"
 
     class Config:
         env_file = ".env"

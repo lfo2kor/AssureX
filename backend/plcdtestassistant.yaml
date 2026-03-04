@@ -21,8 +21,8 @@ jira:
   # username: "your-email@domain.com"
   # api_token: "your-jira-api-token-here"
   url: https://rb-tracker.bosch.com/tracker03
-  username: Raashi.Bathla@in.bosch.com
-  api_token: jira-api-token
+  username: YOUR_JIRA_EMAIL
+  api_token: YOUR_JIRA_API_TOKEN
 
 # Wait Times (milliseconds)
 wait_times:
@@ -49,7 +49,7 @@ folders:
 # AZURE OPENAI CONFIGURATION
 # ============================================================================
 azure_openai:
-  api_key: "your-api-key"
+  api_key: "98dkVOUDLG4wm9OCmF8pxnR48BoUCPYKzfI9p4zYGP5uVh7TiLLwJQQJ99BDAC5RqLJXJ3w3AAABACOGWUeW"
   endpoint: "https://ai2ets.openai.azure.com/"
   api_version: "2024-02-15-preview"
   

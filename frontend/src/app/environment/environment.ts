@@ -1,4 +1,8 @@
   export const environment = {
+    // apiUrl: 'http://localhost:8000',
+  //  apiUrl: 'https://si0vm10371.de.bosch.com:8000',
+  apiUrl: '',
+  // angUrl: `https://si0vm10371.de.bosch.com/home`,
   angUrl: 'http://localhost:4200/home',
   msalConfig: {
     auth: {

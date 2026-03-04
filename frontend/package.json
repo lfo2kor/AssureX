@@ -8,10 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "name": "frontend-kit-consumer",
-      "version": "2.0.0",
-      "description": "",
-      "main": "index.js",
-      "author": ""
+    "version": "2.0.0",
+    "description": "",
+    "main": "index.js",
+    "author": ""
   },
   "private": true,
   "dependencies": {
@@ -26,10 +26,10 @@
     "@angular/router": "^19.2.0",
     "@azure/msal-angular": "^4.0.22",
     "@azure/msal-browser": "^4.26.2",
+    "@bosch/frontend.kit-npm": "^4.2.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.15.0",
-    "@bosch/frontend.kit-npm": "^4.2.0"
+    "zone.js": "~0.15.0"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.2.16",
@@ -42,6 +42,8 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "sass": "^1.97.3",
+    "sass-loader": "^16.0.7",
     "typescript": "~5.7.2"
   }
 }

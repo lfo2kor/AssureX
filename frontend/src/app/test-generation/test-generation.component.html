@@ -84,14 +84,33 @@
                 </div>
 
                 <div *ngIf="message.executionStatus && !message.isRunning">
-                  <div class="execution-result success">
+                  <!-- Show error message for failed executions -->
+                  <div class="execution-result failed" *ngIf="message.executionStatus === 'failed'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    <span>❌ Execution Failed</span>
+                  </div>
+
+                  <!-- Show error details -->
+                  <div class="error-message-box" *ngIf="message.executionStatus === 'failed' && message.executionMessage">
+                    <div class="error-content">
+                      <strong>⚠️ Error Details:</strong>
+                      <p>{{ message.executionMessage }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Show success message for successful executions -->
+                  <div class="execution-result success" *ngIf="message.executionStatus === 'success'">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="20,6 9,17 4,12"></polyline>
                     </svg>
-                    <span>Execution Complete</span>
+                    <span>✅ Execution Complete</span>
                   </div>
 
-                  <div class="test-summary-section compact" *ngIf="message.summary && message.showSummary">
+                  <div class="test-summary-section compact" *ngIf="message.summary && message.showSummary && message.executionStatus === 'success'">
                     <div class="summary-header" (click)="toggleSummary(message)">
                       <h3 class="summary-title">
                         <mat-icon>assessment</mat-icon>
@@ -189,6 +208,26 @@
 
                   <div class="download-actions" *ngIf="message.reportGenerated && message.executionId">
                     <h4 class="download-title">Download Generated Files</h4>
+                    
+                    <!-- 🔥 NEW: Embedded Video Player -->
+                    <div class="video-player-container" *ngIf="message.videoPath">
+                      <div class="video-wrapper">
+                        <video 
+                          class="video-player" 
+                          controls 
+                          preload="metadata"
+                          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23000' width='400' height='300'/%3E%3C/svg%3E"
+                          (loadstart)="onVideoLoadStart($event)"
+                          (canplay)="onVideoCanPlay($event)"
+                          (error)="onVideoError($event)">
+                          <source [src]="message.videoPath" type="video/webm">
+                          <p>Your browser doesn't support HTML5 video. Here is a <a [href]="message.videoPath">link to the video</a> instead.</p>
+                        </video>
+                      </div>
+                      <p class="video-info">📹 Test execution video (click to play)</p>
+                      <p class="video-debug" *ngIf="!isVideoLoaded">⏳ Loading video...</p>
+                    </div>
+
                     <div class="download-buttons">
                       <button class="download-btn report-btn" (click)="downloadReport(message)"
                         title="Download HTML Report" style="background-color: #b0e4b0">

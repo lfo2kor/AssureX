@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environment/environment';
 
 export interface TicketDetail {
   id?: number;
@@ -194,8 +195,10 @@ export interface SummaryExistsResponse {
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'http://localhost:8000/api';  // Update with your backend URL
-
+  // private apiUrl = 'http://localhost:8000/api';  // Update with your backend URL
+  // private apiUrl = `${environment.apiUrl}/api`;
+  // private apiUrl = `${window.location.origin}/api`;
+  private apiUrl = '/api';
   constructor(private http: HttpClient) {}
 
   /**
@@ -204,8 +207,9 @@ export class ApiService {
 getJiraTicket(ticketId: string): Observable<any> {
   // This should match your FastAPI endpoint for Jira tickets
   // return this.http.get<any>(`http://localhost:8000/jira/${ticketId}`);
-  return this.http.get(`http://localhost:8000/jira/${ticketId}`);
-  
+  // return this.http.get(`${window.location.origin}/jira/${ticketId}`);
+  // return this.http.get(`${environment.apiUrl}/jira/${ticketId}`);
+  return this.http.get(`/api/jira/${ticketId}`);
 }
   /**
    * Get ticket details by ticket ID
