@@ -93,7 +93,7 @@ def submit_selector_feedback(feedback: SelectorFeedback):
     # embedding = generate_embedding(feedback.corrected_selector)
     embedding_text = f"{feedback.step_text} {feedback.module}".strip()
     embedding = generate_embedding(embedding_text)
-    feedback_dir = Path("C:/Idea Projects/AI_Test_Assist/insights/pending")
+    feedback_dir = Path("C:/AssureX/backend/insights/pending")
     feedback_dir.mkdir(parents=True, exist_ok=True)
     file_name = f"{feedback.ticket_id}_step{feedback.step_number}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"
     file_path = feedback_dir / file_name
